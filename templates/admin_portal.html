@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+</head>
+<body>
+  <div class="container-fluid">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <a class="navbar-brand" href="#">Admin Portal</a>
+      <a href="#" data-toggle="modal" data-target="#addProductModal">Add Product</a>
+      <a href="#" data-toggle="modal" data-target="#manageProductsModal">Manage Products</a>
+      <a href="#" data-toggle="modal" data-target="#manageCategoriesModal">Manage Categories</a>
+      <a href="#" data-toggle="modal" data-target="#ordersModal">Manage Orders</a>
+      <a href="#" data-toggle="modal" data-target="#manageUsersModal">Manage Users</a>
+      <form action="{{ url_for('admin_logout') }}" method="post">
+        <button type="submit" class="btn btn-link" style="color: #ccc; width: 100%; text-align: left; padding: 15px;">Logout</button>
+      </form>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      
+      <!-- Dashboard Content -->
+      <h1>Admin Dashboard</h1>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Total Sales</div>
+            <div class="card-body">
+              <h5>KES {{ total_sales }}</h5>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Total Orders</div>
+            <div class="card-body">
+              <h5>{{ orders | length }}</h5>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Registered Users</div>
+            <div class="card-body">
+              <h5>{{ users | length }}</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addProductModalLabel">Add Product</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form method="post" action="{{ url_for('admin_add_product') }}" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="category">Category</label>
+              <select class="form-control" id="category" name="category" required>
+                {% for category in categories %}
+                  <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="name">Product Name</label>
+              <input type="text" class="form-control" id="name" name="name" placeholder="Enter product name" required>
+            </div>
+            <div class="form-group">
+              <label for="quantity">Quantity</label>
+              <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Enter quantity" required>
+            </div>
+            <div class="form-group">
+              <label for="unit_price">Unit Price (KES)</label>
+              <input type="number" class="form-control" id="unit_price" name="unit_price" step="0.01" placeholder="Enter unit price" required>
+            </div>
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter product description" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="images">Product Images</label>
+              <input type="file" class="form-control-file" id="images" name="images[]" multiple>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">Add Product</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Products Modal -->
+  <div class="modal fade" id="manageProductsModal" tabindex="-1" aria-labelledby="manageProductsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="manageProductsModalLabel">Manage Products</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-dark">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price (KES)</th>
+                <th>Quantity</th>
+                <th>Description</th>
+                <th>Images</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products %}
+                <tr>
+                  <td>{{ product.id }}</td>
+                  <td>{{ product.name }}</td>
+                  <td>{{ product.category.name }}</td>
+                  <td>{{ product.price }}</td>
+                  <td>{{ product.quantity }}</td>
+                  <td>{{ product.description | truncate(50, True) }}</td>
+                  <td>
+                    {% if product.images %}
+                      {% for image in product.images.split(',') %}
+                        <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Product Image" style="max-width: 50px; margin-right: 5px;">
+                      {% endfor %}
+                    {% else %}
+                      No images
+                    {% endif %}
+                  </td>
+                  <td>
+                    <!-- Edit Button -->
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editProductModal{{ product.id }}">Edit</button>
+                    <!-- Delete Form -->
+                    <form action="{{ url_for('delete_product', product_id=product.id) }}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modals (One per Product) -->
+  {% for product in products %}
+    <div class="modal fade" id="editProductModal{{ product.id }}" tabindex="-1" aria-labelledby="editProductModalLabel{{ product.id }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editProductModalLabel{{ product.id }}">Edit Product: {{ product.name }}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form method="post" action="{{ url_for('edit_product', product_id=product.id) }}" enctype="multipart/form-data">
+              <div class="form-group">
+                <label for="category{{ product.id }}">Category</label>
+                <select class="form-control" id="category{{ product.id }}" name="category" required>
+                  {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id == product.category_id %}selected{% endif %}>{{ category.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="name{{ product.id }}">Product Name</label>
+                <input type="text" class="form-control" id="name{{ product.id }}" name="name" value="{{ product.name }}" required>
+              </div>
+              <div class="form-group">
+                <label for="quantity{{ product.id }}">Quantity</label>
+                <input type="number" class="form-control" id="quantity{{ product.id }}" name="quantity" value="{{ product.quantity }}" required>
+              </div>
+              <div class="form-group">
+                <label for="unit_price{{ product.id }}">Unit Price (KES)</label>
+                <input type="number" class="form-control" id="unit_price{{ product.id }}" name="unit_price" step="0.01" value="{{ product.price }}" required>
+              </div>
+              <div class="form-group">
+                <label for="description{{ product.id }}">Description</label>
+                <textarea class="form-control" id="description{{ product.id }}" name="description" rows="3" required>{{ product.description }}</textarea>
+              </div>
+              <div class="form-group">
+                <label for="images{{ product.id }}">Product Images (Upload new to replace)</label>
+                <input type="file" class="form-control-file" id="images{{ product.id }}" name="images[]" multiple>
+                <small class="form-text text-muted">Current images: 
+                  {% if product.images %}
+                    {{ product.images.split(',') | join(', ') }}
+                  {% else %}
+                    None
+                  {% endif %}
+                </small>
+              </div>
+              <button type="submit" class="btn btn-success btn-block">Update Product</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <!-- Manage Categories Modal -->
+  <div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-labelledby="manageCategoriesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="manageCategoriesModalLabel">Manage Categories</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form action="{{ url_for('add_category') }}" method="post" class="mb-4">
+            <div class="form-group">
+              <label for="category_name">Category Name</label>
+              <input type="text" class="form-control" id="category_name" name="name" placeholder="Enter category name" required>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">Add Category</button>
+          </form>
+          <h6>Existing Categories</h6>
+          <ul class="list-unstyled">
+            {% for category in categories %}
+              <li class="mb-2">
+                {{ category.name }}
+                <form action="{{ url_for('delete_category', category_id=category.id) }}" method="post" class="d-inline">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Orders Modal -->
+  <div class="modal fade" id="ordersModal" tabindex="-1" aria-labelledby="ordersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ordersModalLabel">Manage Orders</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-dark">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+                <th>User ID</th>
+                <th>Ordered At</th>
+                <th>Pickup Location</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+                <tr>
+                  <td>{{ order.id }}</td>
+                  <td>{{ order.product.name }}</td>
+                  <td>{{ order.quantity }}</td>
+                  <td>{{ order.total_price }}</td>
+                  <td>{{ order.user_id }}</td>
+                  <td>{{ order.ordered_at }}</td>
+                  <td>{{ order.pickup_location or 'Not specified' }}</td>
+                  <td>{{ order.status | capitalize }}</td>
+                  <td>
+                    <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
+                      <select name="status" class="form-control d-inline-block w-auto">
+                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                        <option value="canceled" {% if order.status == 'canceled' %}selected{% endif %}>Canceled</option>
+                      </select>
+                      <button type="submit" class="btn btn-success btn-sm">Update</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Users Modal -->
+  <div class="modal fade" id="manageUsersModal" tabindex="-1" aria-labelledby="manageUsersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="manageUsersModalLabel">Manage Users</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-dark">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Company Name</th>
+                <th>Contact Person</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users %}
+                <tr>
+                  <td>{{ user.id }}</td>
+                  <td>{{ user.company_name }}</td>
+                  <td>{{ user.contact_person }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>{{ user.phone }}</td>
+                  <td>{{ user.address }}</td>
+                  <td>
+                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="post">
+                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Debug form submission for order status update
+      $('form[action*="update-order-status"]').on('submit', function() {
+        const status = $(this).find('select[name="status"]').val();
+        console.log('Order status form submitted:', {
+          order_id: $(this).attr('action').match(/\/(\d+)$/)[1],
+          status: status
+        });
+      });
+      // Debug form submission for product deletion
+      $('form[action*="delete-product"]').on('submit', function() {
+        console.log('Product deletion form submitted:', {
+          product_id: $(this).attr('action').match(/\/(\d+)$/)[1]
+        });
+      });
+    });
+  </script>
+</body>
+</html>

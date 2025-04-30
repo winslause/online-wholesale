@@ -1,0 +1,158 @@
+body {
+    background-color: #647a6e;
+    color: #fff;
+    font-family: Arial, sans-serif;
+  }
+  
+  .container {
+    padding: 20px;
+  }
+  
+  .profile-header {
+    margin-bottom: 30px;
+  }
+  
+  .profile-header h1 {
+    font-size: 2.5rem;
+    color: #fff;
+  }
+  
+  .cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #343a40;
+    color: #fff;
+  }
+  
+  .cart-table th,
+  .cart-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #495057;
+  }
+  
+  .cart-table th {
+    background-color: #212529;
+  }
+  
+  .cart-table img {
+    max-width: 100px;
+    height: auto;
+  }
+  
+  .quantity-control {
+    display: flex;
+    align-items: center;
+  }
+  
+  .quantity-control input {
+    width: 60px;
+    text-align: center;
+    background-color: #495057;
+    color: #fff;
+    border: 1px solid #6c757d;
+    border-radius: 4px;
+    margin: 0 10px;
+  }
+  
+  .quantity-control button {
+    background-color: #6c757d;
+    border: none;
+    color: #fff;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .quantity-control button:hover {
+    background-color: #5a6268;
+  }
+  
+  .btn-delete,
+  .btn-checkout,
+  .btn-cancel-order {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .btn-checkout {
+    background-color: #28a745;
+  }
+  
+  .btn-cancel-order {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .btn-delete:hover {
+    background-color: #c82333;
+  }
+  
+  .btn-checkout:hover {
+    background-color: #218838;
+  }
+  
+  .btn-cancel-order:hover {
+    background-color: #e0a800;
+  }
+  
+  .total-price {
+    font-size: 1.5rem;
+    margin-top: 20px;
+    text-align: right;
+  }
+  
+  .orders-section {
+    margin-top: 40px;
+  }
+  
+  .orders-section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+  
+  .order-item {
+    background-color: #343a40;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .cart-table {
+      display: block;
+      overflow-x: auto;
+    }
+  
+    .cart-table th,
+    .cart-table td {
+      font-size: 0.9rem;
+      padding: 10px;
+    }
+  
+    .quantity-control input {
+      width: 50px;
+    }
+  
+    .total-price {
+      text-align: center;
+    }
+  }
+  
+  .validation-message {
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  
+  .validation-error {
+    color: #dc3545;
+  }
+  
+  .validation-success {
+    color: #28a745;
+  }

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wholesale Management</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Wholesale Management</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
+        {% if current_user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#cartModal">My Cart</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#ordersModal">My Orders</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
+          <li class="nav-item">
+            <form action="{{ url_for('logout') }}" method="post">
+              <button type="submit" class="btn btn-link nav-link">Logout</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#loginModal">Login</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#registerModal">Register</a></li>
+        {% endif %}
+        <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#adminLoginModal">Admin</a></li>
+      </ul>
+      <form class="form-inline my-2 my-lg-0" action="{{ url_for('search') }}" method="GET">
+        <input class="form-control mr-sm-2" type="search" placeholder="Search products" name="query">
+        <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+      </form>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  <div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Product Display -->
+  <div class="container mt-5">
+    <div class="row">
+      {% for product in products %}
+        {% if product.quantity > 0 %}
+          <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 d-flex flex-column">
+              <a href="{{ url_for('product_details', product_id=product.id) }}">
+                <img src="{{ url_for('static', filename='uploads/' + product.images.split(',')[0]) }}" alt="Product Image" class="card-img-top">
+                <div class="card-body" style="height: 200px;">
+                  <h2 class="card-title">{{ product.name }}</h2>
+                  <p class="card-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Description: {{ product.description | truncate(50) }}</p>
+                  <p class="card-text">Price: KES {{ product.price }}</p>
+                  <p class="card-text">Quantity Available: {{ product.quantity }}</p>
+                </div>
+              </a>
+              <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post" class="mt-auto add-to-cart-form">
+                <div class="form-group">
+                  <label for="quantity_{{ product.id }}">Order Quantity:</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="quantity_{{ product.id }}" name="quantity" value="1" min="1" max="{{ product.quantity }}" required>
+                    <div class="input-group-append">
+                      <button class="btn btn-outline-secondary btn-plus" type="button" data-product-id="{{ product.id }}">+</button>
+                      <button class="btn btn-outline-secondary btn-minus" type="button" data-product-id="{{ product.id }}">-</button>
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Add to Cart</button>
+              </form>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginModalLabel">Wholesalers Login</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form action="{{ url_for('login') }}" method="POST" id="loginForm">
+            <div class="form-group">
+              <label for="loginEmail">Email address</label>
+              <input type="email" class="form-control" id="loginEmail" name="email" placeholder="Enter email" required>
+              <div id="emailValidation" class="validation-message"></div>
+            </div>
+            <div class="form-group password-toggle">
+              <label for="loginPassword">Password</label>
+              <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter password" required>
+              <i class="fas fa-eye toggle-icon" id="toggleLoginPassword"></i>
+              <div id="passwordValidation" class="validation-message"></div>
+            </div>
+            <button type="submit" class="btn btn-success btn-block" id="loginSubmitBtn" disabled>Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="registerModalLabel">Wholesalers Registration</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="categorySelection">
+            <p>Please select your category:</p>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="category" id="household" value="household">
+              <label class="form-check-label" for="household">Household (consumer)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="category" id="retail" value="retail">
+              <label class="form-check-label" for="retail">Retail Business</label>
+            </div>
+            <button type="button" id="continueBtn" class="btn btn-success btn-block mt-3">Continue</button>
+          </div>
+          <form action="{{ url_for('register') }}" method="POST" id="registrationForm" style="display: none;">
+            <div class="form-group">
+              <label for="companyName" id="companyNameLabel">Company Name</label>
+              <input type="text" class="form-control" id="companyName" name="companyName" placeholder="Enter company name" required>
+            </div>
+            <div class="form-group">
+              <label for="contactPerson">Contact Person</label>
+              <input type="text" class="form-control" id="contactPerson" name="contactPerson" placeholder="Enter contact person name" required>
+            </div>
+            <div class="form-group">
+              <label for="email">Email address</label>
+              <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter phone number" required>
+            </div>
+            <div class="form-group">
+              <label for="address">Address</label>
+              <textarea class="form-control" id="address" name="address" rows="3" placeholder="Describe your address" required></textarea>
+            </div>
+            <div class="form-group password-toggle">
+              <label for="registerPassword">Password</label>
+              <input type="password" class="form-control" id="registerPassword" name="password" placeholder="Enter password (min 8 chars, mix of letters, numbers, special chars)" required>
+              <i class="fas fa-eye toggle-icon" id="togglePassword"></i>
+              <div id="passwordValidation" class="validation-message"></div>
+            </div>
+            <div class="form-group password-toggle">
+              <label for="confirmPassword">Confirm Password</label>
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required>
+              <i class="fas fa-eye toggle-icon" id="toggleConfirmPassword"></i>
+              <div id="confirmPasswordValidation" class="validation-message"></div>
+            </div>
+            <button type="submit" class="btn btn-success btn-block" id="submitBtn" disabled>Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="adminLoginModalLabel">Admin Login</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form action="{{ url_for('admin_login') }}" method="POST" id="adminLoginForm">
+            <div class="form-group">
+              <label for="admin_username">Username</label>
+              <input type="text" class="form-control" id="admin_username" name="admin_username" placeholder="Enter username" required>
+            </div>
+            <div class="form-group">
+              <label for="admin_password">Password</label>
+              <input type="password" class="form-control" id="admin_password" name="admin_password" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cartModalLabel">Your Cart</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          {% if current_user.is_authenticated %}
+            <h5>Here's your cart, {{ current_user.company_name }}</h5>
+            <ul class="list-unstyled">
+              {% set total_amount = namespace(value=0) %}
+              {% for cart_item in cart_items %}
+                {% set item_total = cart_item.product.price * cart_item.quantity %}
+                {% set total_amount.value = total_amount.value + item_total %}
+                <li class="mb-3 p-3 bg-dark rounded">
+                  <h6>{{ cart_item.product.name }}</h6>
+                  <p>Description: {{ cart_item.product.description }}</p>
+                  <p>Price: KES {{ cart_item.product.price }}</p>
+                  <p>Quantity: {{ cart_item.quantity }}</p>
+                  <p>Item Total: KES {{ item_total }}</p>
+                  <form action="{{ url_for('remove_from_cart', product_id=cart_item.product_id) }}" method="post">
+                    <button type="submit" class="btn-delete">Delete</button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="total-amount">Total Amount: KES {{ total_amount.value }}</p>
+            <button class="btn-checkout" data-toggle="modal" data-target="#checkoutModal" data-dismiss="modal">Checkout</button>
+          {% else %}
+            <p>Please log in to view your cart.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal fade" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="checkoutModalLabel">Checkout</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          {% if current_user.is_authenticated %}
+            <div class="alert-section">
+              <p><strong>Please send KES {{ cart_total }} to M-Pesa number 0712345678</strong></p>
+              <p><strong>Enter the transaction code below:</strong></p>
+            </div>
+            <ul class="list-unstyled">
+              {% set total_amount = namespace(value=0) %}
+              {% for cart_item in cart_items %}
+                {% set item_total = cart_item.product.price * cart_item.quantity %}
+                {% set total_amount.value = total_amount.value + item_total %}
+                <li class="mb-3 p-3 bg-dark rounded">
+                  <h6>{{ cart_item.product.name }}</h6>
+                  <p>Description: {{ cart_item.product.description }}</p>
+                  <p>Price: KES {{ cart_item.product.price }}</p>
+                  <p>Quantity: {{ cart_item.quantity }}</p>
+                  <p>Item Total: KES {{ item_total }}</p>
+                </li>
+              {% endfor %}
+            </ul>
+            <p class="total-amount">Total Amount: KES {{ total_amount.value }}</p>
+            <form action="{{ url_for('checkout') }}" method="POST" id="checkoutForm">
+              <div class="form-group">
+                <label for="transaction-code">Transaction Code:</label>
+                <input type="text" class="form-control" id="transaction-code" name="transaction-code" placeholder="Enter transaction code" required>
+              </div>
+              <button type="submit" class="btn-checkout">Checkout</button>
+            </form>
+          {% else %}
+            <p>Please log in to proceed with checkout.</p>
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders Modal -->
+  <div class="modal fade" id="ordersModal" tabindex="-1" aria-labelledby="ordersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ordersModalLabel">Your Orders</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          {% if current_user.is_authenticated %}
+            <ul class="list-unstyled">
+              {% for order in orders %}
+                <li class="mb-3 p-3 bg-dark rounded">
+                  <p><strong>Product:</strong> {{ order.product.name }}</p>
+                  <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                  <p><strong>Total Price:</strong> KES {{ order.total_price }}</p>
+                  <p><strong>Ordered At:</strong> {{ order.ordered_at }}</p>
+                  <p><strong>Status:</strong> {{ order.status | capitalize }}</p>
+                  {% if order.status == 'pending' %}
+                    <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="post">
+                      <button type="submit" class="btn-delete">Cancel Order</button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>Please log in to view your orders.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Debug modal triggers
+      $('[data-toggle="modal"]').on('click', function(e) {
+        e.preventDefault();
+        var target = $(this).data('target');
+        console.log('Modal trigger clicked: ' + target);
+        $(target).modal('show');
+      });
+
+      // Debug modal events
+      $('.modal').on('show.bs.modal', function() {
+        console.log('Modal opened: #' + $(this).attr('id'));
+      }).on('hide.bs.modal', function() {
+        console.log('Modal closed: #' + $(this).attr('id'));
+        $('#loginForm input, #registrationForm input, #adminLoginForm input, #checkoutForm input').each(function() {
+          console.log('Input state on modal hide:', {
+            id: $(this).attr('id'),
+            value: $(this).attr('type') === 'password' ? '[HIDDEN]' : $(this).val()
+          });
+        });
+      });
+
+      // Plus/Minus buttons for quantity input
+      $('.btn-plus').on('click', function() {
+        var productId = $(this).data('product-id');
+        var input = $('#quantity_' + productId);
+        var newValue = parseInt(input.val()) + 1;
+        if (newValue <= parseInt(input.attr('max'))) {
+          input.val(newValue);
+          console.log('Plus button clicked for product ' + productId + ', new value: ' + newValue);
+        } else {
+          alert('Cannot exceed available quantity.');
+        }
+      });
+
+      $('.btn-minus').on('click', function() {
+        var productId = $(this).data('product-id');
+        var input = $('#quantity_' + productId);
+        var newValue = parseInt(input.val()) - 1;
+        if (newValue >= 1) {
+          input.val(newValue);
+          console.log('Minus button clicked for product ' + productId + ', new value: ' + newValue);
+        }
+      });
+
+      // Debug add to cart form submission
+      $('.add-to-cart-form').on('submit', function(e) {
+        var quantity = $(this).find('input[name="quantity"]').val();
+        console.log('Add to cart submitted for ' + $(this).attr('action') + ', quantity: ' + quantity);
+      });
+
+      // Category selection for registration
+      $('#continueBtn').on('click', function() {
+        var selectedCategory = $('input[name="category"]:checked').val();
+        if (selectedCategory) {
+          $('#registrationForm').show();
+          $('#categorySelection').hide();
+          $('#companyNameLabel').text(selectedCategory === 'household' ? 'Surname' : 'Company Name');
+          console.log('Category selected: ' + selectedCategory);
+        } else {
+          alert('Please select a category.');
+        }
+      });
+
+      // Register: Password validation with AJAX
+      function validateRegisterPasswords() {
+        var password = $('#registrationForm #registerPassword').val().trim();
+        var confirmPassword = $('#registrationForm #confirmPassword').val().trim();
+
+        console.log('Register client-side validation:', {
+          password: '[HIDDEN]',
+          passwordLength: password.length,
+          confirmPassword: '[HIDDEN]',
+          confirmPasswordLength: confirmPassword.length
+        });
+
+        if (password === '') {
+          console.warn('Register password field is empty');
+          $('#passwordValidation').text('Please enter a password').addClass('validation-error').removeClass('validation-success');
+          $('#submitBtn').prop('disabled', true);
+          return;
+        }
+
+        var passwordErrors = [];
+        var isPasswordValid = true;
+
+        if (password.length < 8) {
+          passwordErrors.push('At least 8 characters required');
+          isPasswordValid = false;
+        }
+        if (!/[A-Z]/.test(password)) {
+          passwordErrors.push('At least one uppercase letter required');
+          isPasswordValid = false;
+        }
+        if (!/[a-z]/.test(password)) {
+          passwordErrors.push('At least one lowercase letter required');
+          isPasswordValid = false;
+        }
+        if (!/\d/.test(password)) {
+          passwordErrors.push('At least one number required');
+          isPasswordValid = false;
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+          passwordErrors.push('At least one special character required');
+          isPasswordValid = false;
+        }
+
+        var passwordsMatch = password === confirmPassword && password !== '';
+
+        if (!isPasswordValid) {
+          $('#passwordValidation').text(passwordErrors.join(', ')).addClass('validation-error').removeClass('validation-success');
+        } else {
+          $('#passwordValidation').text('Password is strong').addClass('validation-success').removeClass('validation-error');
+        }
+
+        if (confirmPassword === '') {
+          $('#confirmPasswordValidation').text('').removeClass('validation-error validation-success');
+        } else if (!passwordsMatch) {
+          $('#confirmPasswordValidation').text('Passwords do not match').addClass('validation-error').removeClass('validation-success');
+        } else {
+          $('#confirmPasswordValidation').text('Passwords match').addClass('validation-success').removeClass('validation-error');
+        }
+
+        $.ajax({
+          url: '{{ url_for("validate_password") }}',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ password: password, confirmPassword: confirmPassword }),
+          beforeSend: function() {
+            console.log('Register AJAX sending:', {
+              password: '[HIDDEN]',
+              confirmPassword: '[HIDDEN]'
+            });
+          },
+          success: function(response) {
+            console.log('Register server validation response:', response);
+            if (!response.isPasswordValid) {
+              $('#passwordValidation').text(response.passwordErrors.join(', ')).addClass('validation-error').removeClass('validation-success');
+              isPasswordValid = false;
+            }
+            if (!response.passwordsMatch) {
+              $('#confirmPasswordValidation').text('Passwords do not match').addClass('validation-error').removeClass('validation-success');
+              passwordsMatch = false;
+            }
+            $('#submitBtn').prop('disabled', !(isPasswordValid && passwordsMatch));
+            console.log('Register validation result:', {
+              isPasswordValid: isPasswordValid,
+              passwordsMatch: passwordsMatch,
+              submitDisabled: $('#submitBtn').prop('disabled')
+            });
+          },
+          error: function(xhr, status, error) {
+            console.error('Register AJAX error:', status, error);
+            $('#passwordValidation').text('Error validating password').addClass('validation-error');
+            $('#submitBtn').prop('disabled', true);
+            alert('Failed to validate password. Please try again.');
+          }
+        });
+      }
+
+      $('#registrationForm #registerPassword, #registrationForm #confirmPassword').on('input blur change keyup paste', function(e) {
+        console.log('Register input event:', {
+          field: $(this).attr('id'),
+          eventType: e.type,
+          value: '[HIDDEN]'
+        });
+        validateRegisterPasswords();
+      });
+
+      $('#togglePassword').on('click', function() {
+        var type = $('#registrationForm #registerPassword').attr('type') === 'password' ? 'text' : 'password';
+        $('#registrationForm #registerPassword').attr('type', type);
+        $(this).toggleClass('fa-eye fa-eye-slash');
+        console.log('Register password visibility toggled:', { type: type });
+        validateRegisterPasswords();
+      });
+
+      $('#toggleConfirmPassword').on('click', function() {
+        var type = $('#registrationForm #confirmPassword').attr('type') === 'password' ? 'text' : 'password';
+        $('#registrationForm #confirmPassword').attr('type', type);
+        $(this).toggleClass('fa-eye fa-eye-slash');
+        console.log('Register confirm password visibility toggled:', { type: type });
+        validateRegisterPasswords();
+      });
+
+      $('#registrationForm').on('submit', function(e) {
+        var password = $('#registrationForm #registerPassword').val().trim();
+        var confirmPassword = $('#registrationForm #confirmPassword').val().trim();
+        console.log('Register form submission:', {
+          password: '[HIDDEN]',
+          confirmPassword: '[HIDDEN]'
+        });
+
+        if (password === '') {
+          e.preventDefault();
+          alert('Please enter a password.');
+          return;
+        }
+        if (password !== confirmPassword) {
+          e.preventDefault();
+          alert('Passwords do not match.');
+        }
+      });
+
+      // Login: Client-side validation
+      function validateLoginForm() {
+        var email = $('#loginForm #loginEmail').val().trim();
+        var password = $('#loginForm #loginPassword').val().trim();
+
+        console.log('Login client-side validation:', {
+          email: email,
+          emailLength: email.length,
+          password: '[HIDDEN]',
+          passwordLength: password.length
+        });
+
+        var isEmailValid = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+        var isPasswordValid = password.length > 0;
+
+        if (email === '') {
+          $('#emailValidation').text('Please enter an email').addClass('validation-error').removeClass('validation-success');
+        } else if (!isEmailValid) {
+          $('#emailValidation').text('Please enter a valid email').addClass('validation-error').removeClass('validation-success');
+        } else {
+          $('#emailValidation').text('Email is valid').addClass('validation-success').removeClass('validation-error');
+        }
+
+        if (password === '') {
+          $('#passwordValidation').text('Please enter a password').addClass('validation-error').removeClass('validation-success');
+        } else {
+          $('#passwordValidation').text('').removeClass('validation-error validation-success');
+        }
+
+        $('#loginSubmitBtn').prop('disabled', !(isEmailValid && isPasswordValid));
+        console.log('Login validation result:', {
+          isEmailValid: isEmailValid,
+          isPasswordValid: isPasswordValid,
+          submitDisabled: $('#loginSubmitBtn').prop('disabled')
+        });
+      }
+
+      $('#loginForm #loginEmail, #loginForm #loginPassword').on('input blur change keyup paste', function(e) {
+        console.log('Login input event:', {
+          field: $(this).attr('id'),
+          eventType: e.type,
+          value: $(this).attr('id') === 'loginEmail' ? $(this).val() : '[HIDDEN]'
+        });
+        validateLoginForm();
+      });
+
+      $('#toggleLoginPassword').on('click', function() {
+        var type = $('#loginForm #loginPassword').attr('type') === 'password' ? 'text' : 'password';
+        $('#loginForm #loginPassword').attr('type', type);
+        $(this).toggleClass('fa-eye fa-eye-slash');
+        console.log('Login password visibility toggled:', { type: type });
+        validateLoginForm();
+      });
+
+      $('#loginForm').on('submit', function(e) {
+        var email = $('#loginForm #loginEmail').val().trim();
+        var password = $('#loginForm #loginPassword').val().trim();
+        console.log('Login form submission:', {
+          email: email,
+          password: '[HIDDEN]'
+        });
+
+        if (email === '' || password === '') {
+          e.preventDefault();
+          alert('Please fill in all fields.');
+          console.warn('Login submission blocked: Empty fields');
+          return;
+        }
+
+        console.log('Login form submitting to:', $(this).attr('action'));
+      });
+
+      // Admin Login: Client-side validation
+      function validateAdminLoginForm() {
+        var username = $('#adminLoginForm #admin_username').val().trim();
+        var password = $('#adminLoginForm #admin_password').val().trim();
+
+        console.log('Admin login client-side validation:', {
+          username: username,
+          usernameLength: username.length,
+          password: '[HIDDEN]',
+          passwordLength: password.length
+        });
+
+        var isUsernameValid = username.length > 0;
+        var isPasswordValid = password.length > 0;
+
+        $('#adminLoginForm button[type="submit"]').prop('disabled', !(isUsernameValid && isPasswordValid));
+        console.log('Admin login validation result:', {
+          isUsernameValid: isUsernameValid,
+          isPasswordValid: isPasswordValid,
+          submitDisabled: $('#adminLoginForm button[type="submit"]').prop('disabled')
+        });
+      }
+
+      $('#adminLoginForm #admin_username, #adminLoginForm #admin_password').on('input blur change keyup paste', function(e) {
+        console.log('Admin login input event:', {
+          field: $(this).attr('id'),
+          eventType: e.type,
+          value: $(this).attr('id') === 'admin_username' ? $(this).val() : '[HIDDEN]'
+        });
+        validateAdminLoginForm();
+      });
+
+      $('#adminLoginForm').on('submit', function(e) {
+        var username = $('#adminLoginForm #admin_username').val().trim();
+        var password = $('#adminLoginForm #admin_password').val().trim();
+        console.log('Admin login form submission:', {
+          username: username,
+          password: '[HIDDEN]'
+        });
+
+        if (username === '' || password === '') {
+          e.preventDefault();
+          alert('Please fill in all fields.');
+          console.warn('Admin login submission blocked: Empty fields');
+        }
+      });
+
+      // Debug modal open
+      $('#loginModal').on('show.bs.modal', function() {
+        var loginInputs = $('input[id="loginEmail"], input[id="loginPassword"]');
+        var allInputs = $('input');
+        console.log('Login modal opened, input state:', {
+          emailValue: $('#loginForm #loginEmail').val(),
+          passwordValue: '[HIDDEN]',
+          emailExists: !!$('#loginForm #loginEmail').length,
+          passwordExists: !!$('#loginForm #loginPassword').length,
+          multipleLoginInputs: loginInputs.length > 2 ? loginInputs.map(function() { return this.outerHTML; }).get() : 'Single inputs',
+          totalInputs: allInputs.length + ' inputs found',
+          allInputIds: allInputs.map(function() { return $(this).attr('id') || 'no-id'; }).get()
+        });
+        validateLoginForm();
+      });
+
+      $('#registerModal').on('show.bs.modal', function() {
+        var passwordInputs = $('input[id="registerPassword"]');
+        var allInputs = $('input');
+        console.log('Register modal opened, input state:', {
+          passwordValue: '[HIDDEN]',
+          exists: !!$('#registrationForm #registerPassword').length,
+          id: $('#registrationForm #registerPassword').attr('id'),
+          multiplePasswordInputs: passwordInputs.length > 1 ? passwordInputs.map(function() { return this.outerHTML; }).get() : 'Single input',
+          totalInputs: allInputs.length + ' inputs found',
+          allInputIds: allInputs.map(function() { return $(this).attr('id') || 'no-id'; }).get()
+        });
+      });
+
+      $('#adminLoginModal').on('show.bs.modal', function() {
+        var adminInputs = $('input[id="admin_username"], input[id="admin_password"]');
+        var allInputs = $('input');
+        console.log('Admin login modal opened, input state:', {
+          usernameValue: $('#adminLoginForm #admin_username').val(),
+          passwordValue: '[HIDDEN]',
+          usernameExists: !!$('#adminLoginForm #admin_username').length,
+          passwordExists: !!$('#adminLoginForm #admin_password').length,
+          multipleAdminInputs: adminInputs.length > 2 ? adminInputs.map(function() { return this.outerHTML; }).get() : 'Single inputs',
+          totalInputs: allInputs.length + ' inputs found',
+          allInputIds: allInputs.map(function() { return $(this).attr('id') || 'no-id'; }).get()
+        });
+        validateAdminLoginForm();
+      });
+
+      // Prevent modal from clearing inputs
+      $('#loginModal, #registerModal, #adminLoginModal, #checkoutModal').on('hidden.bs.modal', function() {
+        var formId = $(this).attr('id') === 'loginModal' ? '#loginForm' :
+                     $(this).attr('id') === 'registerModal' ? '#registrationForm' :
+                     $(this).attr('id') === 'adminLoginModal' ? '#adminLoginForm' : '#checkoutForm';
+        $(formId)[0].reset = function() {
+          console.log('Form reset prevented for ' + formId);
+        };
+      });
+
+      // Debug checkout form submission
+      $('#checkoutForm').on('submit', function() {
+        const transactionCode = $('#transaction-code').val();
+        console.log('Checkout form submitted:', { transactionCode });
+      });
+
+      // Debug cancel order submission
+      $('.btn-delete').on('click', function() {
+        const form = $(this).closest('form');
+        console.log('Cancel order or remove item clicked:', { action: form.attr('action') });
+      });
+    });
+  </script>
+</body>
+</html>

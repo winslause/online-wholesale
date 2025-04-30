@@ -1,0 +1,344 @@
+cart.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    /* Custom CSS styles */
+    body {
+      background-color: #647a6e;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      padding: 30px;
+      margin-top: 100px;
+    }
+    h1 {
+      color: #4CAF50;
+      text-align: center;
+    }
+    h2 {
+      color: #055a45;
+      background-color: aliceblue;
+      border-radius: 5px;
+      text-align: center;
+      padding: 5px 10px;
+    }
+    p {
+      color: #fff;
+    }
+    .btn-delete {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .total-amount {
+      font-size: 24px;
+      color: #4CAF50;
+      background-color: #293a03;
+      border-radius: 5px;
+      padding: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" text="center" href="{{ url_for('home') }}">MY CART</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="{{ url_for('home') }}">Home <span class="sr-only">(current)</span></a>
+        </li>
+        
+    </div>
+  </nav>
+
+  <div class="container">
+    {% if current_user.is_authenticated %}
+      <h2>Here's your cart, {{ current_user.company_name }}</h2><br><br>
+    {% endif %}
+    <ul>
+      {% for name, description, price, quantity, item_total in cart_products %}
+        <li>
+          <h3>{{ name }}</h3>
+          <p>Description: {{ description }}</p>
+          <p>Price: KES {{ price }}</p>
+          <p>Quantity: {{ quantity }}</p>
+          <p>Item Total: KES {{ item_total }}</p>
+          <form action="{{ url_for('remove_from_cart', product_id=loop.index0) }}" method="post">
+            <button type="submit" class="btn-delete">Delete</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+    <!-- Display total amount -->
+    <p class="total-amount">Total Amount: KES {{ total_amount }}</p>
+    <a href="{{ url_for('home') }}">Continue Shopping</a>
+  </div>
+  
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+
+app.py
+import os
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import csv
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///your_database.db'  # SQLite database path
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your_secret_key'  # Change this to a random string
+app.config['UPLOAD_FOLDER'] = 'static/uploads'  # Folder for storing uploaded files
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}  # Allowed file extensions
+
+db = SQLAlchemy(app)
+
+# Define User model
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(100), nullable=False)
+    contact_person = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    carts = db.relationship('UserCart', backref='user', lazy=True)
+    orders = db.relationship('UserOrder', backref='user', lazy=True)
+
+# Define Product model
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=0)  # New field for quantity
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    images = db.Column(db.String(255))
+    user_orders = db.relationship('UserOrder', backref='product', lazy=True)
+    admin_orders = db.relationship('AdminOrder', backref='product', lazy=True)
+
+# Define Category model
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+
+# Define UserCart model
+class UserCart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    added_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+# Define UserOrder model
+class UserOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    ordered_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+# Define AdminOrder model
+class AdminOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    ordered_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    delivered = db.Column(db.Boolean, nullable=False, default=False)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Define logout route
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.')
+    return redirect(url_for('home'))
+
+# Route for registration
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        company_name = request.form['companyName']
+        contact_person = request.form['contactPerson']
+        email = request.form['email']
+        phone = request.form['phone']
+        address = request.form['address']
+        password = request.form['password']
+        if User.query.filter_by(email=email).first():
+            flash('Email already exists. Please choose a different one.')
+            return redirect(url_for('register'))
+        new_user = User(company_name=company_name, contact_person=contact_person, email=email, phone=phone, address=address)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash('Registration successful. Please login.')
+        return redirect(url_for('login'))  
+    return render_template('signup.html')
+
+# Route for home page
+@app.route('/')
+def home():
+    categories = Category.query.all()
+    products = Product.query.all()
+    if not products:  # Check if there are no products in the database
+        flash('No products available.')
+    return render_template('home.html', categories=categories, products=products)
+
+# Define login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Login successful.')
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid email or password.')
+    return render_template('login.html')
+
+# Define admin route for adding products
+@app.route('/admin/add-product/blahxyz', methods=['GET', 'POST'])
+def admin_add_product():
+    if request.method == 'POST':
+        # Handle file upload
+        uploaded_file_paths = []
+        if 'images[]' in request.files:
+            files = request.files.getlist('images[]')
+            for file in files:
+                if file.filename != '':
+                    if allowed_file(file.filename):
+                        filename = secure_filename(file.filename)
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        uploaded_file_paths.append(filename)
+                    else:
+                        flash('Invalid file extension')
+        else:
+            flash('No file part')
+
+        # Process other form data
+        category_id = request.form['category']
+        name = request.form['name']
+        quantity = int(request.form['quantity'])
+        description = request.form['description']
+        price = request.form['unit_price']
+
+        # Create a new product and add it to the database
+        new_product = Product(name=name, category_id=category_id, quantity=quantity, description=description, price=price)
+        new_product.images = ','.join(uploaded_file_paths)  # Store file paths in the database
+        db.session.add(new_product)
+        db.session.commit()
+
+        flash('Product added successfully.')
+        return redirect(url_for('admin_add_product'))    
+    categories = Category.query.all()
+    return render_template('admin.html', categories=categories)
+
+# Define other routes and views as needed
+@app.route('/product/<int:product_id>')
+def product_details(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template('product_details.html', product=product)
+
+@app.route('/add_to_cart/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    quantity = int(request.form['quantity'])
+    product = Product.query.get(product_id)
+    if product:
+        cart_item = UserCart.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+        if cart_item:
+            cart_item.quantity += quantity
+        else:
+            new_cart_item = UserCart(user_id=current_user.id, product_id=product_id, quantity=quantity)
+            db.session.add(new_cart_item)
+        db.session.commit()
+        flash('Product added to cart.')
+    else:
+        flash('Product not found.')
+    return redirect(url_for('cart'))
+
+@app.route('/cart')
+@login_required
+def cart():
+    cart_items = UserCart.query.filter_by(user_id=current_user.id).all()
+    total_amount = 0
+    cart_products = []
+    for cart_item in cart_items:
+        product = Product.query.get(cart_item.product_id)
+        if product:
+            item_total = product.price * cart_item.quantity
+            total_amount += item_total
+            cart_products.append((product.name, product.description, product.price, cart_item.quantity, item_total))
+    return render_template('cart.html', cart_products=cart_products, total_amount=total_amount)
+
+@app.route('/remove_from_cart/<int:product_id>', methods=['POST'])
+@login_required
+def remove_from_cart(product_id):
+    cart_item = UserCart.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
+        flash('Product removed from cart.')
+    else:
+        flash('Product not found in cart.')
+    return redirect(url_for('cart'))
+    
+@app.route('/search', methods=['GET'])
+def search():
+    query = request.args.get('query')
+    if query:
+        products = Product.query.filter(Product.name.ilike(f"%{query}%")).all()
+        return render_template('home.html', categories=Category.query.all(), products=products)
+    else:
+        flash('Please enter a search query.')
+        return redirect(url_for('home'))
+     
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Create database tables
+    app.run(debug=True)
