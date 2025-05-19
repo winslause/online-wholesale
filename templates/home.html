@@ -51,39 +51,164 @@
     {% endwith %}
   </div>
 
-  <!-- Product Display -->
-  <div class="container mt-5">
+  <!-- Main Content with Sidebar -->
+  <div class="container-fluid mt-4">
     <div class="row">
-      {% for product in products %}
-        {% if product.quantity > 0 %}
-          <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card h-100 d-flex flex-column">
-              <a href="{{ url_for('product_details', product_id=product.id) }}">
-                <img src="{{ url_for('static', filename='uploads/' + product.images.split(',')[0]) }}" alt="Product Image" class="card-img-top">
-                <div class="card-body" style="height: 200px;">
-                  <h2 class="card-title">{{ product.name }}</h2>
-                  <p class="card-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Description: {{ product.description | truncate(50) }}</p>
-                  <p class="card-text">Price: KES {{ product.price }}</p>
-                  <p class="card-text">Quantity Available: {{ product.quantity }}</p>
-                </div>
-              </a>
-              <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post" class="mt-auto add-to-cart-form">
-                <div class="form-group">
-                  <label for="quantity_{{ product.id }}">Order Quantity:</label>
-                  <div class="input-group">
-                    <input type="number" class="form-control" id="quantity_{{ product.id }}" name="quantity" value="1" min="1" max="{{ product.quantity }}" required>
-                    <div class="input-group-append">
-                      <button class="btn btn-outline-secondary btn-plus" type="button" data-product-id="{{ product.id }}">+</button>
-                      <button class="btn btn-outline-secondary btn-minus" type="button" data-product-id="{{ product.id }}">-</button>
-                    </div>
+      <!-- Sidebar -->
+      <div class="col-md-3 col-lg-2 sidebar" id="sidebar">
+        <button class="btn btn-primary btn-sm d-md-none mb-3" type="button" id="sidebarToggle">
+          <i class="fas fa-bars"></i> Filters
+        </button>
+        <div class="sidebar-content" id="sidebarContent">
+          <h5 class="sidebar-title">Filters</h5>
+          <!-- Categories -->
+          <div class="mb-3">
+            <h6>Categories</h6>
+            <ul class="list-unstyled">
+              <li><a href="{{ url_for('home') }}" class="category-link {{ '' if not selected_category else 'text-muted' }}">All Categories</a></li>
+              {% for category in categories %}
+                <li><a href="{{ url_for('search', category_id=category.id) }}" class="category-link {{ 'active' if selected_category == category.id else '' }}">{{ category.name }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+          <!-- Sort by Price -->
+          <div class="mb-3">
+            <h6>Sort by Price</h6>
+            <form action="{{ url_for('search') }}" method="GET" id="sortForm">
+              <select name="sort" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">Select</option>
+                <option value="price_asc" {{ 'selected' if sort == 'price_asc' else '' }}>Price: Low to High</option>
+                <option value="price_desc" {{ 'selected' if sort == 'price_desc' else '' }}>Price: High to Low</option>
+              </select>
+              {% if selected_category %}
+                <input type="hidden" name="category_id" value="{{ selected_category }}">
+              {% endif %}
+              {% if query %}
+                <input type="hidden" name="query" value="{{ query }}">
+              {% endif %}
+              {% if min_price %}
+                <input type="hidden" name="min_price" value="{{ min_price }}">
+              {% endif %}
+              {% if max_price %}
+                <input type="hidden" name="max_price" value="{{ max_price }}">
+              {% endif %}
+            </form>
+          </div>
+          <!-- Price Range -->
+          <div class="mb-3">
+            <h6>Price Range (KES)</h6>
+            <form action="{{ url_for('search') }}" method="GET" id="priceRangeForm">
+              <div class="form-group">
+                <label for="minPrice">Min</label>
+                <input type="number" class="form-control form-control-sm" id="minPrice" name="min_price" value="{{ min_price or '' }}" min="0" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label for="maxPrice">Max</label>
+                <input type="number" class="form-control form-control-sm" id="maxPrice" name="max_price" value="{{ max_price or '' }}" min="0" placeholder="10000">
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm btn-block">Apply</button>
+              {% if selected_category %}
+                <input type="hidden" name="category_id" value="{{ selected_category }}">
+              {% endif %}
+              {% if sort %}
+                <input type="hidden" name="sort" value="{{ sort }}">
+              {% endif %}
+              {% if query %}
+                <input type="hidden" name="query" value="{{ query }}">
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </div>
+      <!-- Product Display -->
+      <div class="col-md-9 col-lg-10">
+        <div class="row g-2">
+          {% if products %}
+            {% for product in products %}
+              {% if product.quantity > 0 %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                  <div class="card h-100">
+                    <a href="#" class="product-link" data-toggle="modal" data-target="#productDetailsModal"
+                       data-id="{{ product.id }}"
+                       data-name="{{ product.name }}"
+                       data-description="{{ product.description }}"
+                       data-price="{{ product.price }}"
+                       data-quantity="{{ product.quantity }}"
+                       data-images="{{ product.images }}">
+                      <img src="{{ url_for('static', filename='uploads/' + product.images.split(',')[0]) }}" alt="{{ product.name }}" class="card-img-top">
+                      <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">Price: KES {{ product.price }}</p>
+                        <p class="card-text">Available: {{ product.quantity }}</p>
+                      </div>
+                    </a>
+                    <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="post" class="card-footer add-to-cart-form">
+                      <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" id="quantity_{{ product.id }}" name="quantity" value="1" min="1" max="{{ product.quantity }}" required>
+                        <div class="input-group-append">
+                          <button class="btn btn-outline-secondary btn-plus" type="button" data-product-id="{{ product.id }}">+</button>
+                          <button class="btn btn-outline-secondary btn-minus" type="button" data-product-id="{{ product.id }}">-</button>
+                        </div>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-sm btn-block mt-2">Add to Cart</button>
+                    </form>
                   </div>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Add to Cart</button>
-              </form>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <div class="col-12">
+              <p class="text-center">No products found.</p>
             </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Details Modal -->
+  <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productDetailsModalLabel">Product Details</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <h4 id="productName">Loading...</h4>
+          <p><strong>Description:</strong> <span id="productDescription"></span></p>
+          <p><strong>Price:</strong> KES <span id="productPrice"></span></p>
+          <p><strong>Quantity Available:</strong> <span id="productQuantity"></span></p>
+          <!-- Image Carousel -->
+          <div id="productImagesCarousel" class="carousel slide" data-ride="carousel">
+            <div class="carousel-inner" id="productImages"></div>
+            <a class="carousel-control-prev" href="#productImagesCarousel" role="button" data-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#productImagesCarousel" role="button" data-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="sr-only">Next</span>
+            </a>
           </div>
-        {% endif %}
-      {% endfor %}
+          <!-- Add to Cart Form -->
+          <form id="productAddToCartForm" action="{{ url_for('add_to_cart', product_id=0) }}" method="post" class="add-to-cart-form mt-3">
+            <div class="input-group input-group-sm">
+              <input type="number" class="form-control" id="modalQuantity" name="quantity" value="1" min="1" required>
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary btn-plus" type="button" data-product-id="modal">+</button>
+                <button class="btn btn-outline-secondary btn-minus" type="button" data-product-id="modal">-</button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm btn-block mt-2">Add to Cart</button>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -94,7 +219,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="loginModalLabel">Wholesalers Login</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -124,7 +249,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="registerModalLabel">Wholesalers Registration</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -187,7 +312,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="adminLoginModalLabel">Admin Login</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -214,7 +339,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="cartModalLabel">Your Cart</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -225,9 +350,8 @@
               {% for cart_item in cart_items %}
                 {% set item_total = cart_item.product.price * cart_item.quantity %}
                 {% set total_amount.value = total_amount.value + item_total %}
-                <li class="mb-3 p-3 bg-dark rounded">
+                <li class="mb-3 p-3 bg-light rounded">
                   <h6>{{ cart_item.product.name }}</h6>
-                  <p>Description: {{ cart_item.product.description }}</p>
                   <p>Price: KES {{ cart_item.product.price }}</p>
                   <p>Quantity: {{ cart_item.quantity }}</p>
                   <p>Item Total: KES {{ item_total }}</p>
@@ -238,7 +362,7 @@
               {% endfor %}
             </ul>
             <p class="total-amount">Total Amount: KES {{ total_amount.value }}</p>
-            <button class="btn-checkout" data-toggle="modal" data-target="#checkoutModal" data-dismiss="modal">Checkout</button>
+            <button style="display: none !important;" class="btn-checkout" data-toggle="modal" data-target="#checkoutModal" data-dismiss="modal">Checkout</button>
           {% else %}
             <p>Please log in to view your cart.</p>
           {% endif %}
@@ -254,7 +378,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="checkoutModalLabel">Checkout</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -268,9 +392,8 @@
               {% for cart_item in cart_items %}
                 {% set item_total = cart_item.product.price * cart_item.quantity %}
                 {% set total_amount.value = total_amount.value + item_total %}
-                <li class="mb-3 p-3 bg-dark rounded">
+                <li class="mb-3 p-3 bg-light rounded">
                   <h6>{{ cart_item.product.name }}</h6>
-                  <p>Description: {{ cart_item.product.description }}</p>
                   <p>Price: KES {{ cart_item.product.price }}</p>
                   <p>Quantity: {{ cart_item.quantity }}</p>
                   <p>Item Total: KES {{ item_total }}</p>
@@ -303,14 +426,14 @@
         <div class="modal-header">
           <h5 class="modal-title" id="ordersModalLabel">Your Orders</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
           {% if current_user.is_authenticated %}
             <ul class="list-unstyled">
               {% for order in orders %}
-                <li class="mb-3 p-3 bg-dark rounded">
+                <li class="mb-3 p-3 bg-light rounded">
                   <p><strong>Product:</strong> {{ order.product.name }}</p>
                   <p><strong>Quantity:</strong> {{ order.quantity }}</p>
                   <p><strong>Total Price:</strong> KES {{ order.total_price }}</p>
@@ -338,6 +461,132 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script>
     $(document).ready(function() {
+      // Sidebar toggle for small screens
+      $('#sidebarToggle').on('click', function() {
+        $('#sidebarContent').slideToggle(200);
+        $(this).find('i').toggleClass('fa-bars fa-times');
+      });
+
+      // Ensure sidebar is hidden by default on small screens
+      if ($(window).width() < 768) {
+        $('#sidebarContent').hide();
+      }
+
+      // Handle window resize
+      $(window).resize(function() {
+        if ($(window).width() >= 768) {
+          $('#sidebarContent').show();
+          $('#sidebarToggle').find('i').removeClass('fa-times').addClass('fa-bars');
+        } else {
+          $('#sidebarContent').hide();
+        }
+      });
+
+      // Populate product details modal
+      $('.product-link').on('click', function(e) {
+        e.preventDefault();
+        try {
+          // Retrieve data attributes
+          var productId = $(this).attr('data-id');
+          var name = $(this).attr('data-name');
+          var description = $(this).attr('data-description') || 'No description available';
+          var price = $(this).attr('data-price');
+          var quantity = $(this).attr('data-quantity');
+          var images = $(this).attr('data-images') ? $(this).attr('data-images').split(',') : [];
+
+          console.log('Product link clicked:', {
+            id: productId,
+            name: name,
+            description: description,
+            price: price,
+            quantity: quantity,
+            images: images
+          });
+
+          // Validate data
+          if (!productId || !name || !price || !quantity) {
+            console.error('Missing product data:', { id: productId, name: name, price: price, quantity: quantity });
+            alert('Error: Product data is incomplete.');
+            return;
+          }
+
+          // Update modal content
+          $('#productName').text(name);
+          $('#productDescription').text(description);
+          $('#productPrice').text(parseFloat(price).toFixed(2));
+          $('#productQuantity').text(quantity);
+
+          // Update carousel
+          $('#productImages').empty();
+          if (images.length > 0) {
+            images.forEach(function(image, index) {
+              if (image.trim()) {
+                var activeClass = index === 0 ? 'active' : '';
+                var imageUrl = '/static/uploads/' + image.trim();
+                $('#productImages').append(`
+                  <div class="carousel-item ${activeClass}">
+                    <img src="${imageUrl}" class="d-block w-100 product-carousel-img" alt="${name}">
+                  </div>
+                `);
+                console.log('Added carousel image:', imageUrl);
+              }
+            });
+          } else {
+            $('#productImages').append(`
+              <div class="carousel-item active">
+                <img src="/static/uploads/placeholder.jpg" class="d-block w-100 product-carousel-img" alt="No image available">
+              </div>
+            `);
+            console.log('No images available, using placeholder');
+          }
+
+          // Update form action and quantity input
+          var baseUrl = '{{ url_for("add_to_cart", product_id=0) }}'.replace('/0', `/${productId}`);
+          $('#productAddToCartForm').attr('action', baseUrl);
+          $('#modalQuantity').attr('max', quantity).val(1);
+
+          console.log('Modal populated:', {
+            action: baseUrl,
+            maxQuantity: quantity
+          });
+
+          // Show modal
+          $('#productDetailsModal').modal('show');
+        } catch (error) {
+          console.error('Error populating modal:', error);
+          alert('Error loading product details. Please try again.');
+        }
+      });
+
+      // Plus/Minus buttons for quantity input (both card and modal)
+      $('.btn-plus').on('click', function() {
+        var productId = $(this).data('product-id');
+        var input = productId === 'modal' ? $('#modalQuantity') : $('#quantity_' + productId);
+        var newValue = parseInt(input.val()) + 1;
+        if (newValue <= parseInt(input.attr('max'))) {
+          input.val(newValue);
+          console.log('Plus button clicked for product ' + productId + ', new value: ' + newValue);
+        } else {
+          alert('Cannot exceed available quantity.');
+        }
+      });
+
+      $('.btn-minus').on('click', function() {
+        var productId = $(this).data('product-id');
+        var input = productId === 'modal' ? $('#modalQuantity') : $('#quantity_' + productId);
+        var newValue = parseInt(input.val()) - 1;
+        if (newValue >= 1) {
+          input.val(newValue);
+          console.log('Minus button clicked for product ' + productId + ', new value: ' + newValue);
+        }
+      });
+
+      // Debug add to cart form submission (both card and modal)
+      $('.add-to-cart-form').on('submit', function(e) {
+        var quantity = $(this).find('input[name="quantity"]').val();
+        console.log('Add to cart submitted for ' + $(this).attr('action') + ', quantity: ' + quantity);
+      });
+
       // Debug modal triggers
       $('[data-toggle="modal"]').on('click', function(e) {
         e.preventDefault();
@@ -351,41 +600,12 @@
         console.log('Modal opened: #' + $(this).attr('id'));
       }).on('hide.bs.modal', function() {
         console.log('Modal closed: #' + $(this).attr('id'));
-        $('#loginForm input, #registrationForm input, #adminLoginForm input, #checkoutForm input').each(function() {
+        $('#loginForm input, #registrationForm input, #adminLoginForm input, #checkoutForm input, #productAddToCartForm input').each(function() {
           console.log('Input state on modal hide:', {
             id: $(this).attr('id'),
             value: $(this).attr('type') === 'password' ? '[HIDDEN]' : $(this).val()
           });
         });
-      });
-
-      // Plus/Minus buttons for quantity input
-      $('.btn-plus').on('click', function() {
-        var productId = $(this).data('product-id');
-        var input = $('#quantity_' + productId);
-        var newValue = parseInt(input.val()) + 1;
-        if (newValue <= parseInt(input.attr('max'))) {
-          input.val(newValue);
-          console.log('Plus button clicked for product ' + productId + ', new value: ' + newValue);
-        } else {
-          alert('Cannot exceed available quantity.');
-        }
-      });
-
-      $('.btn-minus').on('click', function() {
-        var productId = $(this).data('product-id');
-        var input = $('#quantity_' + productId);
-        var newValue = parseInt(input.val()) - 1;
-        if (newValue >= 1) {
-          input.val(newValue);
-          console.log('Minus button clicked for product ' + productId + ', new value: ' + newValue);
-        }
-      });
-
-      // Debug add to cart form submission
-      $('.add-to-cart-form').on('submit', function(e) {
-        var quantity = $(this).find('input[name="quantity"]').val();
-        console.log('Add to cart submitted for ' + $(this).attr('action') + ', quantity: ' + quantity);
       });
 
       // Category selection for registration
@@ -705,10 +925,11 @@
       });
 
       // Prevent modal from clearing inputs
-      $('#loginModal, #registerModal, #adminLoginModal, #checkoutModal').on('hidden.bs.modal', function() {
+      $('#loginModal, #registerModal, #adminLoginModal, #checkoutModal, #productDetailsModal').on('hidden.bs.modal', function() {
         var formId = $(this).attr('id') === 'loginModal' ? '#loginForm' :
                      $(this).attr('id') === 'registerModal' ? '#registrationForm' :
-                     $(this).attr('id') === 'adminLoginModal' ? '#adminLoginForm' : '#checkoutForm';
+                     $(this).attr('id') === 'adminLoginModal' ? '#adminLoginForm' :
+                     $(this).attr('id') === 'checkoutModal' ? '#checkoutForm' : '#productAddToCartForm';
         $(formId)[0].reset = function() {
           console.log('Form reset prevented for ' + formId);
         };

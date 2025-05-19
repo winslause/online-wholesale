@@ -8,6 +8,292 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      color: #333;
+      font-family: Arial, sans-serif;
+      padding-top: 20px;
+    }
+    .profile-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    .profile-card {
+      background-color: #fff;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      padding: 20px;
+    }
+    .profile-card h2 {
+      color: #333;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #28a745;
+      padding-bottom: 10px;
+    }
+    .navbar-dark .navbar-brand,
+    .navbar-dark .nav-link,
+    .navbar-dark .btn-link {
+      color: #fff !important;
+    }
+    .navbar-dark .btn-outline-success {
+      color: #28a745;
+      border-color: #28a745;
+    }
+    .navbar-dark .btn-outline-success:hover {
+      background-color: #28a745;
+      color: #fff;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border-color: #c3e6cb;
+    }
+    .alert-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+      border-color: #f5c6cb;
+    }
+    .profile-info p {
+      margin-bottom: 10px;
+      font-size: 1rem;
+      color: #333;
+    }
+    .profile-info .btn-update {
+      background-color: #007bff;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 5px;
+    }
+    .profile-info .btn-update:hover {
+      background-color: #0056b3;
+    }
+    .cart-table {
+      width: 100%;
+      background-color: #fff;
+      border-collapse: collapse;
+    }
+    .cart-table th,
+    .cart-table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      color: #333;
+      vertical-align: middle;
+    }
+    .cart-table th {
+      background-color: #e9ecef;
+      color: #333;
+    }
+    .cart-table img {
+      max-width: 80px;
+      height: auto;
+      border-radius: 5px;
+    }
+    .quantity-control {
+      display: flex;
+      align-items: center;
+    }
+    .quantity-input {
+      width: 60px;
+      margin: 0 10px;
+      color: #333;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .btn-minus,
+    .btn-plus {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-minus:hover,
+    .btn-plus:hover {
+      background-color: #0056b3;
+    }
+    .btn-delete {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-delete:hover {
+      background-color: #c82333;
+    }
+    .total-price {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      margin: 20px 0;
+    }
+    .btn-checkout {
+      background-color: #28a745;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      width: 100%;
+      font-size: 1.1rem;
+    }
+    .btn-checkout:hover {
+      background-color: #218838;
+    }
+    .verify-payment {
+      background-color: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px;
+      color: #333;
+    }
+    .verify-payment p {
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+    .verify-payment .form-control {
+      background-color: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .verify-payment .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+      border-radius: 5px;
+      width: 100%;
+    }
+    .verify-payment .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    .order-item {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      color: #333;
+    }
+    .order-item p {
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+    .btn-cancel-order {
+      background-color: #dc3545;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-cancel-order:hover {
+      background-color: #c82333;
+    }
+    .modal-content {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+    }
+    .modal-header {
+      background-color: #e9ecef;
+      color: #333;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    .modal-body {
+      padding: 20px;
+    }
+    .alert-section p {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    .modal-body .bg-dark {
+      background-color: #343a40 !important;
+      color: #fff !important;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .modal-body .form-control {
+      background-color: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #phone-number {
+      max-width: 250px;
+    }
+    #payment-status {
+      font-size: 0.9rem;
+      color: #28a745;
+    }
+    #payment-status.error {
+      color: #dc3545;
+    }
+    .modal-body .btn-checkout {
+      background-color: #28a745;
+      color: #fff;
+      width: 100%;
+      border-radius: 5px;
+    }
+    .modal-body .btn-checkout:hover {
+      background-color: #218838;
+    }
+    #adminLoginModal .modal-content {
+      background-color: #fff;
+      color: #333;
+    }
+    #adminLoginModal .form-control {
+      background-color: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #adminLoginModal .btn-success {
+      background-color: #28a745;
+      border-color: #28a745;
+      border-radius: 5px;
+      width: 100%;
+    }
+    #adminLoginModal .btn-success:hover {
+      background-color: #218838;
+    }
+    @media (max-width: 767.98px) {
+      .profile-container {
+        padding: 0 10px;
+      }
+      .profile-card {
+        padding: 15px;
+      }
+      .profile-card h2 {
+        font-size: 1.3rem;
+      }
+      .cart-table th,
+      .cart-table td {
+        font-size: 0.85rem;
+        padding: 8px;
+      }
+      .cart-table img {
+        max-width: 60px;
+      }
+      .quantity-input {
+        width: 50px;
+      }
+      #phone-number {
+        max-width: 100%;
+      }
+      .verify-payment .form-group {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -22,7 +308,7 @@
         <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#cartModal">My Cart</a></li>
         <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#ordersModal">My Orders</a></li>
         <li class="nav-item active"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
-        <li class="nav-item active"><a href="{{ url_for('update_profile') }}" class="nav-link">Update Profile</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('update_profile') }}">Update Profile</a></li>
         <li class="nav-item">
           <form action="{{ url_for('logout') }}" method="post">
             <button type="submit" class="btn btn-link nav-link">Logout</button>
@@ -49,62 +335,103 @@
   </div>
 
   <!-- Profile Content -->
-  <div class="container profile-header">
-    <h1>Welcome, {{ current_user.company_name }}</h1>
-    <h2>Your Cart</h2>
-    {% if cart_items %}
-      <table class="cart-table">
-        <thead>
-          <tr>
-            <th>Image</th>
-            <th>Product</th>
-            <th>Description</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Total</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for cart_item in cart_items %}
-            <tr data-product-id="{{ cart_item.product_id }}">
-              <td><img src="{{ url_for('static', filename='uploads/' + cart_item.product.images.split(',')[0]) }}" alt="{{ cart_item.product.name }}"></td>
-              <td>{{ cart_item.product.name }}</td>
-              <td>{{ cart_item.product.description | truncate(100) }}</td>
-              <td>KES {{ cart_item.product.price }}</td>
-              <td>
-                <div class="quantity-control">
-                  <button class="btn-minus" data-product-id="{{ cart_item.product_id }}">-</button>
-                  <input type="number" class="quantity-input" value="{{ cart_item.quantity }}" min="1" max="{{ cart_item.product.quantity }}" data-product-id="{{ cart_item.product_id }}">
-                  <button class="btn-plus" data-product-id="{{ cart_item.product_id }}">+</button>
-                </div>
-              </td>
-              <td class="item-total">KES {{ cart_item.product.price * cart_item.quantity }}</td>
-              <td>
-                <form action="{{ url_for('remove_from_cart', product_id=cart_item.product_id) }}" method="post">
-                  <button type="submit" class="btn-delete">Remove</button>
-                </form>
-              </td>
+  <div class="profile-container">
+    <!-- Profile Info Card -->
+    <div class="profile-card">
+      <h2>Profile Information</h2>
+      <div class="profile-info">
+        <p><strong>Company Name:</strong> {{ current_user.company_name }}</p>
+        <p><strong>Contact Person:</strong> {{ current_user.contact_person }}</p>
+        <p><strong>Email:</strong> {{ current_user.email }}</p>
+        <p><strong>Phone:</strong> {{ current_user.phone }}</p>
+        <p><strong>Address (Pickup Location):</strong> {{ current_user.address }}</p>
+        <a href="{{ url_for('update_profile') }}" class="btn-update">Update Profile</a>
+      </div>
+    </div>
+
+    <!-- Cart Card -->
+    <div class="profile-card">
+      <h2>Your Cart</h2>
+      {% if cart_items %}
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Product</th>
+              <th>Description</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Actions</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div class="total-price">Total Price: KES <span id="total-price">{{ cart_total }}</span></div>
-      <button class="btn-checkout" data-toggle="modal" data-target="#checkoutModal">Proceed to Checkout</button>
-    {% else %}
-      <p>Your cart is empty.</p>
+          </thead>
+          <tbody>
+            {% for cart_item in cart_items %}
+              <tr data-product-id="{{ cart_item.product_id }}">
+                <td><img src="{{ url_for('static', filename='uploads/' + cart_item.product.images.split(',')[0]) }}" alt="{{ cart_item.product.name }}"></td>
+                <td>{{ cart_item.product.name }}</td>
+                <td>{{ cart_item.product.description | truncate(100) }}</td>
+                <td>KES {{ cart_item.product.price | round(2) }}</td>
+                <td>
+                  <div class="quantity-control">
+                    <button class="btn-minus" data-product-id="{{ cart_item.product_id }}">-</button>
+                    <input type="number" class="quantity-input" value="{{ cart_item.quantity }}" min="1" max="{{ cart_item.product.quantity }}" data-product-id="{{ cart_item.product_id }}">
+                    <button class="btn-plus" data-product-id="{{ cart_item.product_id }}">+</button>
+                  </div>
+                </td>
+                <td class="item-total">KES {{ (cart_item.product.price * cart_item.quantity) | round(2) }}</td>
+                <td>
+                  <form action="{{ url_for('remove_from_cart', product_id=cart_item.product_id) }}" method="post">
+                    <button type="submit" class="btn-delete">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="total-price">Total Price: KES <span id="total-price">{{ cart_total | round(2) }}</span></div>
+        <button class="btn-checkout" data-toggle="modal" data-target="#checkoutModal">Proceed to Checkout</button>
+      {% else %}
+        <p>Your cart is empty.</p>
+      {% endif %}
+    </div>
+
+    <!-- Payment Verification Card -->
+    {% if pending_orders %}
+      <div class="profile-card">
+        <h2>Verify Pending Payments</h2>
+        {% for order in pending_orders %}
+          <div class="verify-payment">
+            <p><strong>Order ID:</strong> {{ order.id }}</p>
+            <p><strong>Total Amount:</strong> KES {{ order.total_price | round(2) }}</p>
+            <p><strong>Checkout Request ID:</strong> {{ order.checkout_request_id or 'Not available' }}</p>
+            <form action="{{ url_for('verify_payment') }}" method="POST">
+              <input type="hidden" name="order_id" value="{{ order.id }}">
+              <div class="form-group">
+                <label for="mpesa_receipt_{{ order.id }}">M-Pesa Receipt Number</label>
+                <input type="text" class="form-control" id="mpesa_receipt_{{ order.id }}" name="mpesa_receipt" placeholder="Enter M-Pesa receipt number" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Verify Payment</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
 
-    <div class="orders-section">
+    <!-- Orders Card -->
+    <div class="profile-card">
       <h2>Your Orders</h2>
       {% if orders %}
         {% for order in orders %}
           <div class="order-item">
             <p><strong>Product:</strong> {{ order.product.name }}</p>
             <p><strong>Quantity:</strong> {{ order.quantity }}</p>
-            <p><strong>Total Price:</strong> KES {{ order.total_price }}</p>
+            <p><strong>Total Price:</strong> KES {{ order.total_price | round(2) }}</p>
             <p><strong>Ordered At:</strong> {{ order.ordered_at }}</p>
             <p><strong>Status:</strong> {{ order.status | capitalize }}</p>
+            {% if order.mpesa_receipt_number %}
+              <p><strong>M-Pesa Receipt:</strong> {{ order.mpesa_receipt_number }}</p>
+            {% endif %}
             {% if order.status == 'pending' %}
               <form action="{{ url_for('cancel_order', order_id=order.id) }}" method="post">
                 <button type="submit" class="btn-cancel-order">Cancel Order</button>
@@ -118,12 +445,12 @@
     </div>
   </div>
 
-  <!-- Checkout Modal (Reused from home.html) -->
+  <!-- Checkout Modal -->
   <div class="modal fade" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="checkoutModalLabel">Checkout</h5>
+          <h5 class="modal-title" id="checkoutModalLabel">Checkout with M-Pesa</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">×</span>
           </button>
@@ -131,29 +458,31 @@
         <div class="modal-body">
           {% if current_user.is_authenticated %}
             <div class="alert-section">
-              <p><strong>Please send KES {{ cart_total }} to M-Pesa number 0712345678</strong></p>
-              <p><strong>Enter the transaction code below:</strong></p>
+              <p><strong>Total Amount: KES {{ cart_total | round(2) }}</strong></p>
+              <p><strong>Enter your M-Pesa phone number to receive an STK Push:</strong></p>
             </div>
-            <ul class="list-unstyled">
+            <ul class="list-unordered">
               {% for cart_item in cart_items %}
                 {% set item_total = cart_item.product.price * cart_item.quantity %}
                 <li class="mb-3 p-3 bg-dark rounded">
                   <h6>{{ cart_item.product.name }}</h6>
                   <p>Description: {{ cart_item.product.description }}</p>
-                  <p>Price: KES {{ cart_item.product.price }}</p>
+                  <p>Price: KES {{ cart_item.product.price | round(2) }}</p>
                   <p>Quantity: {{ cart_item.quantity }}</p>
-                  <p>Item Total: KES {{ item_total }}</p>
+                  <p>Item Total: KES {{ item_total | round(2) }}</p>
                 </li>
               {% endfor %}
             </ul>
-            <p class="total-amount">Total Amount: KES {{ cart_total }}</p>
-            <form action="{{ url_for('checkout') }}" method="POST" id="checkoutForm">
+            <p class="total-amount">Total Amount: KES {{ cart_total | round(2) }}</p>
+            <form action="{{ url_for('initiate_stk_push') }}" method="POST" id="checkoutForm">
               <div class="form-group">
-                <label for="transaction-code">Transaction Code:</label>
-                <input type="text" class="form-control" id="transaction-code" name="transaction-code" placeholder="Enter transaction code" required>
+                <label for="phone-number">Phone Number (e.g., 2547XXXXXXXX)</label>
+                <input type="text" class="form-control" id="phone-number" name="phone_number" placeholder="Enter phone number" pattern="254[7|1][0-9]{8}" title="Phone number must start with 2547 or 2541 followed by 8 digits" required>
               </div>
-              <button type="submit" class="btn-checkout">Checkout</button>
+              <input type="hidden" name="amount" value="{{ cart_total | round(0) }}">
+              <button type="submit" class="btn-checkout">Initiate Payment</button>
             </form>
+            <div id="payment-status" class="mt-3"></div>
           {% else %}
             <p>Please log in to proceed with checkout.</p>
           {% endif %}
@@ -165,7 +494,7 @@
     </div>
   </div>
 
-  <!-- Admin Login Modal (Reused from home.html) -->
+  <!-- Admin Login Modal -->
   <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -198,7 +527,6 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script>
     $(document).ready(function() {
-      // Debug modal triggers
       $('[data-toggle="modal"]').on('click', function(e) {
         e.preventDefault();
         var target = $(this).data('target');
@@ -206,9 +534,9 @@
         $(target).modal('show');
       });
 
-      // Debug modal events
       $('.modal').on('show.bs.modal', function() {
         console.log('Modal opened: #' + $(this).attr('id'));
+        $('#payment-status').text('');
       }).on('hide.bs.modal', function() {
         console.log('Modal closed: #' + $(this).attr('id'));
         $('#checkoutForm input, #adminLoginForm input').each(function() {
@@ -219,7 +547,6 @@
         });
       });
 
-      // Update total price
       function updateTotalPrice() {
         let total = 0;
         $('.cart-table tbody tr').each(function() {
@@ -230,7 +557,6 @@
         console.log('Total price updated:', total);
       }
 
-      // Quantity plus/minus buttons
       $('.btn-plus').on('click', function() {
         const productId = $(this).data('product-id');
         const input = $(this).closest('.quantity-control').find('.quantity-input');
@@ -256,7 +582,6 @@
         }
       });
 
-      // Manual quantity input
       $('.quantity-input').on('change', function() {
         const productId = $(this).data('product-id');
         let newQuantity = parseInt($(this).val());
@@ -273,7 +598,6 @@
         console.log('Quantity input changed:', { productId, newQuantity });
       });
 
-      // Update cart quantity via AJAX
       function updateCartQuantity(productId, newQuantity, inputElement) {
         $.ajax({
           url: '{{ url_for("update_cart_quantity") }}',
@@ -299,13 +623,33 @@
         });
       }
 
-      // Debug checkout form submission
-      $('#checkoutForm').on('submit', function() {
-        const transactionCode = $('#transaction-code').val();
-        console.log('Checkout form submitted:', { transactionCode });
+      $('#checkoutForm').on('submit', function(e) {
+        e.preventDefault();
+        const phoneNumber = $('#phone-number').val();
+        console.log('Checkout form submitted:', { phoneNumber });
+
+        $.ajax({
+          url: $(this).attr('action'),
+          method: 'POST',
+          data: $(this).serialize(),
+          success: function(response) {
+            if (response.success) {
+              $('#payment-status').text('STK Push sent to your phone. Please enter your M-Pesa PIN and verify the payment below.').removeClass('error');
+              console.log('STK Push initiated:', response);
+              $('#checkoutModal').modal('hide');
+              location.reload();
+            } else {
+              $('#payment-status').text('Failed to initiate payment: ' + response.message).addClass('error');
+              console.error('STK Push failed:', response.message);
+            }
+          },
+          error: function(xhr, status, error) {
+            $('#payment-status').text('Error initiating payment. Please try again.').addClass('error');
+            console.error('AJAX error initiating STK Push:', status, error);
+          }
+        });
       });
 
-      // Debug cancel order submission
       $('.btn-cancel-order').on('click', function() {
         const form = $(this).closest('form');
         console.log('Cancel order clicked:', { action: form.attr('action') });

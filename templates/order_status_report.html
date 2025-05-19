@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Status Report</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="sidebar">
+      <a class="navbar-brand" href="{{ url_for('admin_portal') }}">Admin Portal</a>
+      <a href="{{ url_for('admin_portal') }}">Dashboard</a>
+      <!-- <a href="#" data-toggle="modal" data-target="#reportsModal">Reports</a> -->
+      <form action="{{ url_for('admin_logout') }}" method="post">
+        <button type="submit" class="btn btn-link" style="color: #ccc; width: 100%; text-align: left; padding: 15px;">Logout</button>
+      </form>
+    </div>
+    <div class="main-content">
+      <h1>Order Status Report</h1>
+      <h3>Pending Orders</h3>
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Total Price</th>
+            <th>User ID</th>
+            <th>Ordered At</th>
+            <th>Address (Pickup Location)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in pending_orders %}
+            <tr>
+              <td>{{ order.id }}</td>
+              <td>{{ order.product.name }}</td>
+              <td>{{ order.quantity }}</td>
+              <td>{{ order.total_price }}</td>
+              <td>{{ order.user_id }}</td>
+              <td>{{ order.ordered_at }}</td>
+              <td>{{ order.user.address or 'Not specified' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <h3>Delivered Orders</h3>
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Total Price</th>
+            <th>User ID</th>
+            <th>Ordered At</th>
+            <th>Address (Pickup Location)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in delivered_orders %}
+            <tr>
+              <td>{{ order.id }}</td>
+              <td>{{ order.product.name }}</td>
+              <td>{{ order.quantity }}</td>
+              <td>{{ order.total_price }}</td>
+              <td>{{ order.user_id }}</td>
+              <td>{{ order.ordered_at }}</td>
+              <td>{{ order.user.address or 'Not specified' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <h3>Canceled Orders</h3>
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Total Price</th>
+            <th>User ID</th>
+            <th>Ordered At</th>
+            <th>Address (Pickup Location)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in canceled_orders %}
+            <tr>
+              <td>{{ order.id }}</td>
+              <td>{{ order.product.name }}</td>
+              <td>{{ order.quantity }}</td>
+              <td>{{ order.total_price }}</td>
+              <td>{{ order.user_id }}</td>
+              <td>{{ order.ordered_at }}</td>
+              <td>{{ order.user.address or 'Not specified' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

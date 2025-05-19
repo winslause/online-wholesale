@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Re-order Level Report</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="sidebar">
+      <a class="navbar-brand" href="{{ url_for('admin_portal') }}">Admin Portal</a>
+      <a href="{{ url_for('admin_portal') }}">Dashboard</a>
+      <!-- <a href="#" data-toggle="modal" data-target="#reportsModal">Reports</a> -->
+      <form action="{{ url_for('admin_logout') }}" method="post">
+        <button type="submit" class="btn btn-link" style="color: #ccc; width: 100%; text-align: left; padding: 15px;">Logout</button>
+      </form>
+    </div>
+    <div class="main-content">
+      <h1>Re-order Level Report</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      <form action="{{ url_for('reorder_level_report') }}" method="post" class="mb-3">
+        <button type="submit" class="btn btn-success">Send Re-order Email Notification</button>
+      </form>
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Current Quantity</th>
+            <th>Re-order Level</th>
+            <th>Stock Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+            <tr>
+              <td>{{ product.id }}</td>
+              <td>{{ product.name }}</td>
+              <td>{{ product.category.name }}</td>
+              <td>{{ product.quantity }}</td>
+              <td>{{ product.reorder_level }}</td>
+              <td>
+                {% if product.quantity == 0 %}
+                  <span class="badge badge-danger">Depleted</span>
+                {% else %}
+                  <span class="badge badge-warning">Low</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if not products %}
+        <p class="text-muted">No products are at or below their re-order level.</p>
+      {% endif %}
+    </div>
+  </div>
+  <!-- Reports Modal -->
+  <div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reportsModalLabel">Reports</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <a href="{{ url_for('reorder_level_report') }}" class="btn btn-success btn-block">Re-order Level Report</a>
+            </li>
+            <li class="mb-2">
+              <a href="{{ url_for('stock_calendar_report') }}" class="btn btn-success btn-block">Stock Calendar Report</a>
+            </li>
+            <li class="mb-2">
+              <a href="{{ url_for('product_movement_report') }}" class="btn btn-success btn-block">Product Movement Report</a>
+            </li>
+            <li class="mb-2">
+              <a href="{{ url_for('order_status_report') }}" class="btn btn-success btn-block">Order Status Report</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

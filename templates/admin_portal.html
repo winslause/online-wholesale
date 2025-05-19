@@ -12,7 +12,6 @@
 </head>
 <body>
   <div class="container-fluid">
-    <!-- Sidebar -->
     <div class="sidebar">
       <a class="navbar-brand" href="#">Admin Portal</a>
       <a href="#" data-toggle="modal" data-target="#addProductModal">Add Product</a>
@@ -20,14 +19,12 @@
       <a href="#" data-toggle="modal" data-target="#manageCategoriesModal">Manage Categories</a>
       <a href="#" data-toggle="modal" data-target="#ordersModal">Manage Orders</a>
       <a href="#" data-toggle="modal" data-target="#manageUsersModal">Manage Users</a>
+      <a href="#" data-toggle="modal" data-target="#reportsModal">Reports</a>
       <form action="{{ url_for('admin_logout') }}" method="post">
         <button type="submit" class="btn btn-link" style="color: #ccc; width: 100%; text-align: left; padding: 15px;">Logout</button>
       </form>
     </div>
-
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Flash Messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
@@ -35,8 +32,6 @@
           {% endfor %}
         {% endif %}
       {% endwith %}
-      
-      <!-- Dashboard Content -->
       <h1>Admin Dashboard</h1>
       <div class="row">
         <div class="col-md-4">
@@ -66,8 +61,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Add Product Modal -->
   <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -100,6 +93,10 @@
               <input type="number" class="form-control" id="unit_price" name="unit_price" step="0.01" placeholder="Enter unit price" required>
             </div>
             <div class="form-group">
+              <label for="reorder_level">Re-order Level</label>
+              <input type="number" class="form-control" id="reorder_level" name="reorder_level" placeholder="Enter re-order level" required value="10">
+            </div>
+            <div class="form-group">
               <label for="description">Description</label>
               <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter product description" required></textarea>
             </div>
@@ -113,8 +110,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Manage Products Modal -->
   <div class="modal fade" id="manageProductsModal" tabindex="-1" aria-labelledby="manageProductsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
@@ -133,6 +128,7 @@
                 <th>Category</th>
                 <th>Price (KES)</th>
                 <th>Quantity</th>
+                <th>Re-order Level</th>
                 <th>Description</th>
                 <th>Images</th>
                 <th>Action</th>
@@ -146,6 +142,7 @@
                   <td>{{ product.category.name }}</td>
                   <td>{{ product.price }}</td>
                   <td>{{ product.quantity }}</td>
+                  <td>{{ product.reorder_level }}</td>
                   <td>{{ product.description | truncate(50, True) }}</td>
                   <td>
                     {% if product.images %}
@@ -157,9 +154,7 @@
                     {% endif %}
                   </td>
                   <td>
-                    <!-- Edit Button -->
                     <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editProductModal{{ product.id }}">Edit</button>
-                    <!-- Delete Form -->
                     <form action="{{ url_for('delete_product', product_id=product.id) }}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
                       <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>
@@ -172,8 +167,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Edit Product Modals (One per Product) -->
   {% for product in products %}
     <div class="modal fade" id="editProductModal{{ product.id }}" tabindex="-1" aria-labelledby="editProductModalLabel{{ product.id }}" aria-hidden="true">
       <div class="modal-dialog">
@@ -203,6 +196,10 @@
                 <input type="number" class="form-control" id="quantity{{ product.id }}" name="quantity" value="{{ product.quantity }}" required>
               </div>
               <div class="form-group">
+                <label for="reorder_level{{ product.id }}">Re-order Level</label>
+                <input type="number" class="form-control" id="reorder_level{{ product.id }}" name="reorder_level" value="{{ product.reorder_level }}" required>
+              </div>
+              <div class="form-group">
                 <label for="unit_price{{ product.id }}">Unit Price (KES)</label>
                 <input type="number" class="form-control" id="unit_price{{ product.id }}" name="unit_price" step="0.01" value="{{ product.price }}" required>
               </div>
@@ -228,8 +225,6 @@
       </div>
     </div>
   {% endfor %}
-
-  <!-- Manage Categories Modal -->
   <div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-labelledby="manageCategoriesModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -262,8 +257,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Manage Orders Modal -->
   <div class="modal fade" id="ordersModal" tabindex="-1" aria-labelledby="ordersModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
@@ -283,7 +276,7 @@
                 <th>Total Price</th>
                 <th>User ID</th>
                 <th>Ordered At</th>
-                <th>Pickup Location</th>
+                <th>Address (Pickup Location)</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -297,14 +290,14 @@
                   <td>{{ order.total_price }}</td>
                   <td>{{ order.user_id }}</td>
                   <td>{{ order.ordered_at }}</td>
-                  <td>{{ order.pickup_location or 'Not specified' }}</td>
+                  <td>{{ order.user.address or 'Not specified' }}</td>
                   <td>{{ order.status | capitalize }}</td>
                   <td>
                     <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
                       <select name="status" class="form-control d-inline-block w-auto">
                         <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
-                        <option value="canceled" {% if order.status == 'canceled' %}selected{% endif %}>Canceled</option>
+                        <option value="canceled" {% if order.status == 'canceled' %}selected{% endif %}>Canceled</order>
                       </select>
                       <button type="submit" class="btn btn-success btn-sm">Update</button>
                     </form>
@@ -317,8 +310,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Manage Users Modal -->
   <div class="modal fade" id="manageUsersModal" tabindex="-1" aria-labelledby="manageUsersModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -363,14 +354,39 @@
       </div>
     </div>
   </div>
-
-  <!-- Scripts -->
+  <div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reportsModalLabel">Reports</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <a href="{{ url_for('reorder_level_report') }}" class="btn btn-success btn-block">Re-order Level Report</a>
+            </li>
+            <li class="mb-2">
+              <a href="{{ url_for('stock_calendar_report') }}" class="btn btn-success btn-block">Stock Calendar Report</a>
+            </li>
+            <li class="mb-2">
+              <a href="{{ url_for('product_movement_report') }}" class="btn btn-success btn-block">Product Movement Report</a>
+            </li>
+            <li class="mb-2">
+              <a href="{{ url_for('order_status_report') }}" class="btn btn-success btn-block">Order Status Report</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script>
     $(document).ready(function() {
-      // Debug form submission for order status update
       $('form[action*="update-order-status"]').on('submit', function() {
         const status = $(this).find('select[name="status"]').val();
         console.log('Order status form submitted:', {
@@ -378,7 +394,6 @@
           status: status
         });
       });
-      // Debug form submission for product deletion
       $('form[action*="delete-product"]').on('submit', function() {
         console.log('Product deletion form submitted:', {
           product_id: $(this).attr('action').match(/\/(\d+)$/)[1]

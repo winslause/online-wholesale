@@ -1,165 +1,335 @@
-/* Existing styles unchanged, adding eye icon styles */
+/* General page styling */
 body {
-    background-color: #647a6e;
-    color: #fff;
-    font-family: Arial, sans-serif;
-  }
-  
-  .card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.3s;
-    height: 100%;
-  }
-  
-  .card:hover {
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  }
-  
-  .card-img-top {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    height: 200px;
-    object-fit: cover;
-  }
-  
-  .card-title {
-    font-size: 20px;
-    margin-bottom: 0.5rem;
-  }
-  
-  .card-text {
-    font-size: 16px;
-  }
-  
-  .btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-  }
-  
-  .btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-  }
-  
-  .btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-  }
-  
-  .modal-content {
-    background-color: #333;
-    color: #fff;
-  }
-  
-  .modal-content input,
-  .modal-content textarea,
-  .modal-content select {
-    background-color: #555;
-    color: #fff;
-    border: 1px solid #777;
-  }
-  
-  .modal-content input::placeholder,
-  .modal-content textarea::placeholder,
-  .modal-content select::placeholder {
-    color: #ccc;
-  }
-  
-  .modal-content input:focus,
-  .modal-content textarea:focus,
-  .modal-content select:focus {
-    background-color: #666;
-    border: 1px solid #888;
-  }
-  
-  .modal-content label {
-    color: #4CAF50;
-  }
-  
-  .btn-success {
-    background-color: #4CAF50;
-    border-color: #4CAF50;
-  }
-  
-  .btn-success:hover {
-    background-color: #45a049;
-  }
-  
-  .alert-section {
-    background-color: #e6818a;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  .total-amount {
-    font-size: 24px;
-    color: #4CAF50;
-    background-color: #293a03;
-    border-radius: 5px;
-    padding: 10px;
-    text-align: center;
-  }
-  
-  .btn-delete {
-    background-color: #c72b3b;
-    color: #fff;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-  }
-  
-  .btn-checkout {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    width: 100%;
-    text-align: center;
-  }
-  
-  img {
-    max-width: 100%;
+  background-color: #f5f7fa;
+  color: #333;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+/* Navbar styling */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar styling */
+.sidebar {
+  padding: 15px;
+  background-color: #fff;
+  border-right: 1px solid #e9ecef;
+  height: calc(100vh - 70px); /* Adjust based on navbar height */
+  position: sticky;
+  top: 70px; /* Offset for navbar */
+}
+
+.sidebar-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.sidebar-content {
+  display: block; /* Visible by default on larger screens */
+}
+
+.category-link {
+  display: block;
+  padding: 5px 0;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.category-link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.category-link.active {
+  font-weight: 600;
+  color: #333;
+}
+
+#sidebarToggle {
+  width: 100%;
+  text-align: left;
+}
+
+/* Card styling */
+.card {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  background-color: #fff;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-img-top {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  height: 150px;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 12px;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.card-text {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.card-footer {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  border-color: #0056b3;
+}
+
+.btn-outline-secondary {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #218838;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.btn-checkout {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+/* Form inputs */
+.form-control {
+  font-size: 0.9rem;
+  padding: 6px 12px;
+}
+
+.input-group-sm > .form-control {
+  height: 30px;
+}
+
+/* Modal styling */
+.modal-content {
+  background-color: #fff;
+  color: #333;
+  border-radius: 8px;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  background-color: #f8f9fa;
+  color: #333;
+  border: 1px solid #ced4da;
+}
+
+.modal-content input::placeholder,
+.modal-content textarea::placeholder,
+.modal-content select::placeholder {
+  color: #6c757d;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus,
+.modal-content select:focus {
+  background-color: #fff;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.modal-content label {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Alert and total amount */
+.alert-section {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.total-amount {
+  font-size: 1.2rem;
+  color: #28a745;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  padding: 8px;
+  text-align: center;
+}
+
+/* Validation messages */
+.validation-message {
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.validation-error {
+  color: #dc3545;
+}
+
+.validation-success {
+  color: #28a745;
+}
+
+/* Password toggle icon */
+.password-toggle {
+  position: relative;
+}
+
+.password-toggle input {
+  padding-right: 36px;
+}
+
+.password-toggle .toggle-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.password-toggle .toggle-icon:hover {
+  color: #007bff;
+}
+
+/* Image styling */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+  .sidebar {
+    position: relative;
     height: auto;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0;
+  }
+
+  .sidebar-content {
+    display: none; /* Hidden by default on small screens */
+  }
+
+  #sidebarToggle {
     margin-bottom: 10px;
   }
-  
-  .validation-message {
-    font-size: 14px;
-    margin-top: 5px;
+
+  .col-md-9 {
+    width: 100%; /* Full width on small screens */
   }
-  
-  .validation-error {
-    color: #dc3545;
+
+  .card-img-top {
+    height: 120px;
   }
-  
-  .validation-success {
-    color: #28a745;
+
+  .card-title {
+    font-size: 1rem;
   }
-  
-  .password-toggle {
-    position: relative;
+
+  .card-text {
+    font-size: 0.85rem;
   }
-  
-  .password-toggle input {
-    padding-right: 40px;
+
+  .btn-primary {
+    font-size: 0.85rem;
+    padding: 5px 10px;
   }
-  
-  .password-toggle .toggle-icon {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: #ccc;
+}
+
+/* Product Details Modal and Card */
+.product-details-card,
+.modal-content {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-carousel-img {
+  max-height: 300px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.carousel-inner {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 5%;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+  .product-carousel-img {
+    max-height: 200px;
   }
-  
-  .password-toggle .toggle-icon:hover {
-    color: #4CAF50;
+
+  .modal-lg {
+    max-width: 90%;
   }
+}
