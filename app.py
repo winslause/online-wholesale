@@ -312,7 +312,7 @@ def check_and_notify_low_stock():
             # Create and send email
             msg = Message(
                 subject="Re-order Level Alert: Restock Required",
-                recipients=[os.getenv('ADMIN_EMAIL', 'wenbusale383@gmail.com')],
+                recipients=[os.getenv('ADMIN_EMAIL', 'ramlaabdisitar@gmail.com')],
                 html=html_body
             )
             mail.send(msg)
