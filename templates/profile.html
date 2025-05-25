@@ -147,32 +147,6 @@
     .btn-checkout:hover {
       background-color: #218838;
     }
-    .verify-payment {
-      background-color: #e9ecef;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 15px;
-      color: #333;
-    }
-    .verify-payment p {
-      margin-bottom: 10px;
-      font-size: 0.95rem;
-    }
-    .verify-payment .form-control {
-      background-color: #fff;
-      color: #333;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .verify-payment .btn-primary {
-      background-color: #007bff;
-      border-color: #007bff;
-      border-radius: 5px;
-      width: 100%;
-    }
-    .verify-payment .btn-primary:hover {
-      background-color: #0056b3;
-    }
     .order-item {
       background-color: #fff;
       padding: 15px;
@@ -289,9 +263,6 @@
       #phone-number {
         max-width: 100%;
       }
-      .verify-payment .form-group {
-        max-width: 100%;
-      }
     }
   </style>
 </head>
@@ -396,27 +367,11 @@
       {% endif %}
     </div>
 
-    <!-- Payment Verification Card -->
-    {% if pending_orders %}
-      <div class="profile-card">
-        <h2>Verify Pending Payments</h2>
-        {% for order in pending_orders %}
-          <div class="verify-payment">
-            <p><strong>Order ID:</strong> {{ order.id }}</p>
-            <p><strong>Total Amount:</strong> KES {{ order.total_price | round(2) }}</p>
-            <p><strong>Checkout Request ID:</strong> {{ order.checkout_request_id or 'Not available' }}</p>
-            <form action="{{ url_for('verify_payment') }}" method="POST">
-              <input type="hidden" name="order_id" value="{{ order.id }}">
-              <div class="form-group">
-                <label for="mpesa_receipt_{{ order.id }}">M-Pesa Receipt Number</label>
-                <input type="text" class="form-control" id="mpesa_receipt_{{ order.id }}" name="mpesa_receipt" placeholder="Enter M-Pesa receipt number" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-sm">Verify Payment</button>
-            </form>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
+    <!-- Pending Payments Card -->
+    <div class="profile-card">
+      <h2>Pending Payments</h2>
+      <p><strong>Note:</strong> Payments are processed automatically via M-Pesa. If your order status remains "pending" for more than a few minutes, please <a href="mailto:support@wholesaleapp.com">contact support</a>.</p>
+    </div>
 
     <!-- Orders Card -->
     <div class="profile-card">
@@ -452,7 +407,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="checkoutModalLabel">Checkout with M-Pesa</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -501,7 +456,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="adminLoginModalLabel">Admin Login</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
@@ -525,6 +480,115 @@
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+$(document).ready(function() {
+    // Handle checkout form submission
+    $('#checkoutForm').on('submit', function(e) {
+        e.preventDefault();
+        const phoneNumber = $('#phone-number').val();
+        const payment fantasiesStatus = $('#payment-status');
+        paymentStatus.text('').removeClass('error');
+        console.log('Checkout form submitted:', { phoneNumber });
+
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.success) {
+                    paymentStatus.text('STK Push sent. Please complete the payment on your phone. Waiting for confirmation...').removeClass('error');
+                    console.log('STK Push initiated:', response);
+                    // Start polling for order status
+                    pollOrderStatus();
+                } else {
+                    paymentStatus.text('Failed to initiate payment: ' + response.message).addClass('error');
+                    console.error('STK Push failed:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                paymentStatus.text('Error initiating payment. Please try again.').addClass('error');
+                console.error('AJAX error initiating STK Push:', status, error);
+            }
+        });
+    });
+
+    // Poll for order status updates
+    function pollOrderStatus() {
+        let attempts = 0;
+        const maxAttempts = 20; // Poll for up to 100 seconds (20 * 5s)
+        const interval = setInterval(() => {
+            attempts++;
+            console.log(`Polling order status (attempt ${attempts}/${maxAttempts})`);
+            $.ajax({
+                url: '/check_order_status',
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                success: function(data) {
+                    if (data.completed) {
+                        clearInterval(interval);
+                        $('#payment-status').text('Payment completed successfully! Updating orders...').removeClass('error');
+                        console.log('Order status updated to completed');
+                        // Close modal and update orders
+                        $('#checkoutModal').modal('hide');
+                        updateOrdersSection();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        $('#payment-status').text('Payment not confirmed yet. Please verify manually or contact support.').addClass('error');
+                        console.log('Polling timed out');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Polling error:', status, error);
+                    if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        $('#payment-status').text('Error checking payment status. Please try again or contact support.').addClass('error');
+                    }
+                }
+            });
+        }, 5000); // Poll every 5 seconds
+    }
+
+    // Dynamically update the orders section
+    function updateOrdersSection() {
+        console.log('Updating orders section');
+        $.ajax({
+            url: '/get_orders',
+            method: 'GET',
+            success: function(data) {
+                const ordersContainer = $('.profile-card').last().find('div').first();
+                ordersContainer.empty();
+                if (data.orders.length > 0) {
+                    data.orders.forEach(order => {
+                        const orderHtml = `
+                            <div class="order-item">
+                                <p><strong>Product:</strong> ${order.product_name}</p>
+                                <p><strong>Quantity:</strong> ${order.quantity}</p>
+                                <p><strong>Total Price:</strong> KES ${parseFloat(order.total_price).toFixed(2)}</p>
+                                <p><strong>Ordered At:</strong> ${new Date(order.ordered_at).toLocaleString()}</p>
+                                <p><strong>Status:</strong> ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</p>
+                                ${order.mpesa_receipt_number ? `<p><strong>M-Pesa Receipt:</strong> ${order.mpesa_receipt_number}</p>` : ''}
+                                ${order.status === 'pending' ? `
+                                    <form action="/cancel_order/${order.id}" method="post">
+                                        <button type="submit" class="btn-cancel-order">Cancel Order</button>
+                                    </form>
+                                ` : ''}
+                            </div>
+                        `;
+                        ordersContainer.append(orderHtml);
+                    });
+                } else {
+                    ordersContainer.append('<p>You have no orders.</p>');
+                }
+                console.log('Orders section updated:', data.orders);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching orders:', status, error);
+                $('.profile-card').last().find('div').first().html('<p>Error loading orders. Please try again.</p>');
+            }
+        });
+    }
+});
+</script>
   <script>
     $(document).ready(function() {
       $('[data-toggle="modal"]').on('click', function(e) {
@@ -634,7 +698,7 @@
           data: $(this).serialize(),
           success: function(response) {
             if (response.success) {
-              $('#payment-status').text('STK Push sent to your phone. Please enter your M-Pesa PIN and verify the payment below.').removeClass('error');
+              $('#payment-status').text('STK Push sent to your phone. Please complete the payment. Your order status will update automatically.').removeClass('error');
               console.log('STK Push initiated:', response);
               $('#checkoutModal').modal('hide');
               location.reload();

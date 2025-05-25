@@ -9,34 +9,40 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
 import requests
 from sqlalchemy import event
 from sqlalchemy.sql import text
 from sqlite3 import Connection as SQLiteConnection
+import logging
 
-# Load environment variables
-load_dotenv()
-
-# Verify environment variables
-required_env_vars = ['DARAJA_CONSUMER_KEY', 'DARAJA_CONSUMER_SECRET', 'DARAJA_PASSKEY', 'DARAJA_SHORTCODE', 'CALLBACK_URL']
-for var in required_env_vars:
-    if not os.getenv(var):
-        print(f"Warning: Environment variable {var} is not set in .env file.")
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s', handlers=[
+    logging.FileHandler('app.log'),  # Log to file
+    logging.StreamHandler()  # Log to console
+])
 
 # Flask app configuration
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_secure_secret_key')
+app.config['SECRET_KEY'] = 'your_secure_secret_key_12345'  # Replace with a secure key
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'nahidahudeif@gmail.com')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'wvaz rend gbhu lblj')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'nahidahudeif@gmail.com')
+app.config['MAIL_USERNAME'] = 'nahidahudeif@gmail.com'
+app.config['MAIL_PASSWORD'] = 'wvaz rend gbhu lblj'  # App-specific password
+app.config['MAIL_DEFAULT_SENDER'] = 'nahidahudeif@gmail.com'
+
+# Daraja API Configuration (hardcoded)
+DARAJA_CONSUMER_KEY = 'YOUR_CONSUMER_KEY'  # Replace with your sandbox consumer key
+DARAJA_CONSUMER_SECRET = 'YOUR_CONSUMER_SECRET'  # Replace with your sandbox consumer secret
+DARAJA_SHORTCODE = '174379'
+DARAJA_PASSKEY = 'YOUR_PASSKEY'  # Replace with your sandbox passkey
+DARAJA_API_BASE_URL = 'https://sandbox.safaricom.co.ke'
+CALLBACK_URL = 'https://cf67-154-159-237-88.ngrok-free.app/mpesa/callback'
+USE_MANUAL_PAYLOAD = False  # Use dynamic password generation
 
 # Initialize extensions
 db = SQLAlchemy(app)
@@ -52,18 +58,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.execute("PRAGMA foreign_keys=ON;")
         cursor.close()
 
-# Register the event listener within an application context
+# Register the event listener
 with app.app_context():
     event.listens_for(db.engine, "connect")(set_sqlite_pragma)
-
-# Daraja API Configuration
-DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY')
-DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET')
-DARAJA_SHORTCODE = os.getenv('DARAJA_SHORTCODE', '174379')
-DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY')
-DARAJA_API_BASE_URL = 'https://sandbox.safaricom.co.ke'
-CALLBACK_URL = os.getenv('CALLBACK_URL')
-USE_MANUAL_PAYLOAD = False
 
 # Models
 class User(db.Model, UserMixin):
@@ -157,7 +154,7 @@ def initialize_database():
         db.create_all()
         with db.engine.connect() as connection:
             schema = connection.execute(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='stock_transaction';")).fetchone()
-            print(f"StockTransaction schema: {schema[0] if schema else 'Not created'}")
+            logging.info(f"StockTransaction schema: {schema[0] if schema else 'Not created'}")
         
         if not Category.query.first():
             default_categories = ['Electronics', 'Clothing', 'Food']
@@ -176,7 +173,7 @@ def initialize_database():
                     )
                     db.session.add(transaction)
             db.session.commit()
-        print("Database tables created.")
+        logging.info("Database tables initialized.")
 
 initialize_database()
 
@@ -189,17 +186,20 @@ def get_daraja_access_token():
         response = requests.get(auth_url, headers=headers, timeout=10)
         response.raise_for_status()
         result = response.json()
-        print(f"Access token generated: {result.get('access_token')[:10]}...")
-        return result.get("access_token")
+        access_token = result.get("access_token")
+        logging.info(f"Access token generated: {access_token[:10]}...")
+        return access_token
     except requests.RequestException as e:
-        print(f"Error generating access token: {e}, Response: {response.text if 'response' in locals() else 'No response'}")
+        logging.error(f"Error generating access token: {str(e)}, Response: {response.text if 'response' in locals() else 'No response'}")
         return None
 
 # Generate STK Push password
 def generate_stk_password():
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     data = f"{DARAJA_SHORTCODE}{DARAJA_PASSKEY}{timestamp}"
-    return base64.b64encode(data.encode()).decode(), timestamp
+    password = base64.b64encode(data.encode()).decode()
+    logging.info(f"Generated STK password: {password[:10]}... for timestamp: {timestamp}")
+    return password, timestamp
 
 # Check and notify low stock
 def check_and_notify_low_stock():
@@ -264,14 +264,14 @@ def check_and_notify_low_stock():
             """
             msg = Message(
                 subject="Re-order Level Alert: Restock Required",
-                recipients=[os.getenv('ADMIN_EMAIL', 'ramlaabdisitar@gmail.com')],
+                recipients=['ramlaabdisitar@gmail.com'],
                 html=html_body
             )
             mail.send(msg)
-            print(f"Low stock notification sent for {len(low_stock_products)} products.")
+            logging.info(f"Low stock notification sent for {len(low_stock_products)} products.")
             return low_stock_products, True
         except Exception as e:
-            print(f"Error sending low stock email: {str(e)}")
+            logging.error(f"Error sending low stock email: {str(e)}")
             return low_stock_products, False
     return [], False
 
@@ -291,7 +291,7 @@ def home():
         categories = Category.query.all()
         products = Product.query.all()
     except Exception as e:
-        print(f"Database error: {str(e)}")
+        logging.error(f"Database error: {str(e)}")
         categories = []
         products = []
         flash('Database error: Unable to load categories or products.', 'danger')
@@ -312,9 +312,8 @@ def profile():
     cart_items = UserCart.query.filter_by(user_id=current_user.id).all()
     cart_total = sum(item.product.price * item.quantity for item in cart_items)
     orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.ordered_at.desc()).all()
-    pending_orders = Order.query.filter_by(user_id=current_user.id, status='pending').all()
-    print(f"Profile loaded: {len(orders)} orders, {len(pending_orders)} pending orders, cart_total={cart_total}")
-    return render_template('profile.html', cart_items=cart_items, cart_total=cart_total, orders=orders, pending_orders=pending_orders)
+    logging.info(f"Profile loaded: user_id={current_user.id}, orders={len(orders)}, cart_total={cart_total}")
+    return render_template('profile.html', cart_items=cart_items, cart_total=cart_total, orders=orders)
 
 @app.route('/update_profile', methods=['GET', 'POST'])
 @login_required
@@ -364,7 +363,7 @@ def validate_password():
             'passwordsMatch': passwords_match
         })
     except Exception as e:
-        print(f"Error in validate_password: {str(e)}")
+        logging.error(f"Error in validate_password: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
 
 @app.route('/register', methods=['POST'])
@@ -427,7 +426,7 @@ def logout():
 def admin_login():
     username = request.form['admin_username']
     password = request.form['admin_password']
-    if username == 'admin' and password == 'admin':
+    if username == 'admin' and password == 'admin':  # Replace with secure credentials
         session['admin_logged_in'] = True
         flash('Admin login successful.', 'success')
         return redirect(url_for('admin_portal'))
@@ -570,7 +569,7 @@ def edit_product(product_id):
         flash('Product updated successfully.', 'success')
     except Exception as e:
         db.session.rollback()
-        print(f"Error updating product: {str(e)}")
+        logging.error(f"Error updating product: {str(e)}")
         flash(f'Error updating product: {str(e)}', 'danger')
     return redirect(url_for('admin_portal'))
 
@@ -589,11 +588,11 @@ def delete_product(product_id):
         flash('Product deleted successfully.', 'success')
     except Exception as e:
         db.session.rollback()
-        print(f"Error deleting product: {str(e)}")
+        logging.error(f"Error deleting product: {str(e)}")
         flash(f'Error deleting product: {str(e)}', 'danger')
     return redirect(url_for('admin_portal'))
 
-@app.route('/admin/update-order-status/<int:order_id>', methods=['POST'])
+@app.route('/admin/update-order/<int:order_id>', methods=['POST'])
 def update_order_status(order_id):
     if not session.get('admin_logged_in'):
         flash('Admin access required.', 'danger')
@@ -601,7 +600,8 @@ def update_order_status(order_id):
     try:
         admin_order = AdminOrder.query.get_or_404(order_id)
         new_status = request.form.get('status')
-        if new_status not in ['pending', 'delivered', 'canceled']:
+        if new_status not in ['pending', 'completed', 'canceled']:
+            logging.error(f'Invalid order status: {new_status}')
             flash(f'Invalid status: {new_status}', 'danger')
             return redirect(url_for('admin_portal'))
         if new_status == 'canceled' and admin_order.status != 'canceled':
@@ -634,12 +634,13 @@ def update_order_status(order_id):
         if order:
             order.status = new_status
         db.session.commit()
+        logging.info(f"Order {order_id} updated to status: {new_status}")
         check_and_notify_low_stock()
-        flash('Order status updated successfully.', 'success')
+        flash('Order status updated successfully.')
     except Exception as e:
         db.session.rollback()
-        print(f"Error updating order status: {str(e)}")
-        flash(f'Error updating order status: {str(e)}', 'danger')
+        logging.error(f"Error updating order status: {str(e)}")
+        flash(f'Error updating order: {str(e)}', 'danger')
     return redirect(url_for('admin_portal'))
 
 @app.route('/cancel-order/<int:order_id>', methods=['POST'])
@@ -649,13 +650,17 @@ def cancel_order(order_id):
     if not order:
         flash('Order not found.', 'danger')
         return redirect(url_for('profile'))
+
     if order.status != 'pending':
-        flash('Cannot cancel non-pending order.', 'danger')
+        flash('Cannot cancel order with non-pending status.', 'danger')
         return redirect(url_for('profile'))
+
     try:
         product = Product.query.get(order.product_id)
         product.quantity += order.quantity
         order.status = 'canceled'
+
+        # Log stock return
         transaction = StockTransaction(
             product_id=order.product_id,
             quantity=order.quantity,
@@ -663,49 +668,61 @@ def cancel_order(order_id):
             type='addition'
         )
         db.session.add(transaction)
-        user_order = UserOrder.query.filter(
-            UserOrder.user_id == current_user.id,
-            UserOrder.product_id == order.product_id,
-            UserOrder.quantity == order.quantity,
-            UserOrder.total_price == order.total_price,
-            UserOrder.ordered_at == order.ordered_at
+
+        # Cancel user order
+        user_order = UserOrder.query.filter_by(
+            user_id=current_user.id,
+            product_id=order.product_id,
+            quantity=order.quantity,
+            total_price=order.total_price,
+            ordered_at=order.ordered_at
         ).first()
         if user_order:
             user_order.status = 'canceled'
-        admin_order = AdminOrder.query.filter(
-            AdminOrder.user_id == current_user.id,
-            AdminOrder.product_id == order.product_id,
-            AdminOrder.quantity == order.quantity,
-            AdminOrder.total_price == order.total_price,
-            AdminOrder.ordered_at == order.ordered_at
+
+        # Cancel admin order
+        admin_order = AdminOrder.query.filter_by(
+            user_id=current_user.id,
+            product_id=order.product_id,
+            quantity=order.quantity,
+            total_price=order.total_price,
+            ordered_at=order.ordered_at
         ).first()
         if admin_order:
             admin_order.status = 'canceled'
-            transaction = StockTransaction(
-                product_id=admin_order.product_id,
-                quantity=admin_order.quantity,
-                transaction_date=datetime.utcnow(),
-                type='addition'
-            )
-            db.session.add(transaction)
+
+            # Optional: Log the stock return again (redundant if already done above)
+            # db.session.add(transaction)  # You already added the same transaction above
+
         db.session.commit()
-        check_and_notify_low_stock()
-        flash('Order canceled successfully.', 'success')
+        check_and_notify()
+        flash('Order successfully canceled.', 'success')
     except Exception as e:
         db.session.rollback()
-        print(f"Error canceling order: {str(e)}")
+        logging.error(f"Error canceling order: {str(e)}")
         flash(f'Error canceling order: {str(e)}', 'danger')
+
     return redirect(url_for('profile'))
+
 
 @app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
     if not session.get('admin_logged_in'):
         flash('Admin access required.', 'danger')
         return redirect(url_for('home'))
-    user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    flash('User deleted successfully.', 'success')
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            flash('User not found.', 'danger')
+            return redirect(url_for('admin_portal'))
+        db.session.delete(user)
+        db.session.commit()
+        flash('User deleted successfully.')
+        flash('success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting user: {str(e)}")
+        flash(f'Error deleting user: {str(e)}', 'danger')
     return redirect(url_for('admin_portal'))
 
 @app.route('/product/<int:product_id>')
@@ -739,6 +756,7 @@ def add_to_cart(product_id):
     except ValueError:
         flash('Invalid quantity.', 'danger')
     except Exception as e:
+        logging.error(f"Error adding to cart: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
     return redirect(url_for('home'))
 
@@ -746,8 +764,8 @@ def add_to_cart(product_id):
 @login_required
 def update_cart_quantity():
     data = request.get_json()
-    product_id = data['product_id']
-    new_quantity = data['new_quantity']
+    product_id = data.get('product_id')
+    new_quantity = data.get('new_quantity')
     cart_item = UserCart.query.filter_by(user_id=current_user.id, product_id=product_id).first()
     if cart_item:
         product = Product.query.get(product_id)
@@ -770,240 +788,168 @@ def remove_from_cart(product_id):
         flash('Product not found in cart.', 'danger')
     return redirect(url_for('profile'))
 
-@app.route('/checkout', methods=['POST'])
-@login_required
-def checkout():
-    transaction_code = request.form['transaction-code']
-    if re.match(r'^[Ss]\w{9}$', transaction_code):
-        cart_items = UserCart.query.filter_by(user_id=current_user.id).all()
-        try:
-            ordered_at = datetime.utcnow()
-            for cart_item in cart_items:
-                product = Product.query.get(cart_item.product_id)
-                if product:
-                    if cart_item.quantity <= product.quantity:
-                        product.quantity -= cart_item.quantity
-                        total_price = cart_item.quantity * product.price
-                        order = Order(
-                            user_id=current_user.id,
-                            product_id=product.id,
-                            quantity=cart_item.quantity,
-                            total_price=total_price,
-                            status='pending',
-                            ordered_at=ordered_at
-                        )
-                        db.session.add(order)
-                        user_order = UserOrder(
-                            user_id=current_user.id,
-                            product_id=product.id,
-                            quantity=cart_item.quantity,
-                            total_price=total_price,
-                            pickup_location=current_user.address,
-                            ordered_at=ordered_at
-                        )
-                        db.session.add(user_order)
-                        admin_order = AdminOrder(
-                            user_id=current_user.id,
-                            product_id=product.id,
-                            quantity=cart_item.quantity,
-                            total_price=total_price,
-                            pickup_location=current_user.address,
-                            ordered_at=ordered_at
-                        )
-                        db.session.add(admin_order)
-                        transaction = StockTransaction(
-                            product_id=admin_order.product_id,
-                            quantity=-admin_order.quantity,
-                            transaction_date=admin_order.ordered_at,
-                            type='order'
-                        )
-                        db.session.add(transaction)
-                        db.session.delete(cart_item)
-                    else:
-                        flash(f"Not enough quantity for {product.name}.", 'danger')
-                        return redirect(url_for('profile'))
-            db.session.commit()
-            check_and_notify_low_stock()
-            flash('Order placed successfully.', 'success')
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error during checkout: {str(e)}")
-            flash(f'Checkout failed: {str(e)}', 'danger')
-        return redirect(url_for('profile'))
-    flash('Invalid transaction code.', 'danger')
-    return redirect(url_for('profile'))
-
 @app.route('/initiate_stk_push', methods=['POST'])
 @login_required
 def initiate_stk_push():
+    phone_number = request.form.get("phone_number")
+    amount = request.form.get("amount")
+    logging.info(f"STK Push request: user_id={current_user.id}, phone_number={phone_number}, amount={amount}")
+    if not phone_number or not phone_number.startswith("254") or len(phone_number) != 12 or not phone_number.isdigit():
+        message = "Invalid phone number. Use format 2547XXXXXXXX or 2541XXXXXXXX."
+        logging.error(f"STK Push validation failed: {message}")
+        return jsonify({"success": False, "message": message}), 400
     try:
-        phone_number = request.form.get('phone_number')
-        amount = float(request.form.get('amount'))
-        if not phone_number or not amount:
-            return jsonify({"success": False, "message": "Phone number and amount are required"}), 400
-
-        if not re.match(r'^254[7|1][0-9]{8}$', phone_number):
-            return jsonify({"success": False, "message": "Invalid phone number format. Use 2547XXXXXXXX or 2541XXXXXXXX"}), 400
-
-        cart_items = UserCart.query.filter_by(user_id=current_user.id).all()
-        if not cart_items:
-            return jsonify({"success": False, "message": "Cart is empty"}), 400
-
-        total_price = sum(item.product.price * item.quantity for item in cart_items)
-        if abs(total_price - amount) > 0.01:
-            return jsonify({"success": False, "message": "Amount does not match cart total"}), 400
-
-        consumer_key = os.getenv('DARAJA_CONSUMER_KEY')
-        consumer_secret = os.getenv('DARAJA_CONSUMER_SECRET')
-        api_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-        headers = {"Authorization": "Basic " + base64.b64encode(f"{consumer_key}:{consumer_secret}".encode()).decode()}
-        response = requests.get(api_url, headers=headers)
-        access_token = response.json().get('access_token')
-        if not access_token:
-            print(f"Failed to get access token: {response.text}")
-            return jsonify({"success": False, "message": "Failed to authenticate with M-Pesa"}), 500
-
-        stk_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        passkey = os.getenv('DARAJA_PASSKEY')
-        shortcode = os.getenv('DARAJA_SHORTCODE')
-        password = base64.b64encode(f"{shortcode}{passkey}{timestamp}".encode()).decode()
-        payload = {
-            "BusinessShortCode": shortcode,
-            "Password": password,
-            "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
-            "Amount": int(amount),
-            "PartyA": phone_number,
-            "PartyB": shortcode,
-            "PhoneNumber": phone_number,
-            "CallBackURL": os.getenv('CALLBACK_URL'),
-            "AccountReference": f"Order_{current_user.id}",
-            "TransactionDesc": "Payment for order"
-        }
-
-        print(f"STK Push request: {json.dumps(payload, indent=4)}")
-        response = requests.post(stk_url, json=payload, headers=headers)
-        print(f"Daraja API response: {response.text}")
-
-        if response.status_code != 200 or response.json().get('ResponseCode') != '0':
-            print(f"STK Push failed: {response.text}")
-            return jsonify({"success": False, "message": "Failed to initiate STK Push"}), 500
-
-        checkout_request_id = response.json().get('CheckoutRequestID')
-        if not checkout_request_id:
-            print(f"STK Push error: No CheckoutRequestID in response: {response.text}")
-            return jsonify({"success": False, "message": "No CheckoutRequestID received"}), 500
-
-        order_ids = []
-        user_order_ids = []
-        admin_order_ids = []
-        for item in cart_items:
-            order = Order(
-                user_id=current_user.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                total_price=item.product.price * item.quantity,
-                status="pending",
-                checkout_request_id=checkout_request_id
-            )
-            db.session.add(order)
-            db.session.flush()
-            order_ids.append(order.id)
-
-            user_order = UserOrder(
-                user_id=current_user.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                total_price=item.product.price * item.quantity,
-                status="pending"
-            )
-            db.session.add(user_order)
-            db.session.flush()
-            user_order_ids.append(user_order.id)
-
-            admin_order = AdminOrder(
-                user_id=current_user.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                total_price=item.product.price * item.quantity,
-                status="pending"
-            )
-            db.session.add(admin_order)
-            db.session.flush()
-            admin_order_ids.append(admin_order.id)
-
-        UserCart.query.filter_by(user_id=current_user.id).delete()
-        db.session.commit()
-        print(f"Orders created: Order IDs={order_ids}, UserOrder IDs={user_order_ids}, AdminOrder IDs={admin_order_ids}")
-
-        return jsonify({"success": True, "message": "STK Push sent to your phone. Please complete the payment."}), 200
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"STK Push error: {str(e)}")
-        return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
+        amount = float(amount)
+        if amount <= 0:
+            message = "Invalid amount. Must be positive."
+            logging.error(f"STK Push validation failed: {message}")
+            return jsonify({"success": False, "message": message}), 400
+    except (ValueError, TypeError):
+        message = "Invalid amount. Must be a number."
+        logging.error(f"STK Push validation failed: {message}")
+        return jsonify({"success": False, "message": message}), 400
+    cart_items = UserCart.query.filter_by(user_id=current_user.id).all()
+    if not cart_items:
+        message = "Cart is empty."
+        logging.error(f"STK Push validation failed: {message}")
+        return jsonify({"success": False, "message": message}), 400
+    cart_total = sum(item.product.price * item.quantity for item in cart_items)
+    if abs(cart_total - amount) > 1.0:
+        message = f"Amount ({amount}) does not match cart total ({cart_total})."
+        logging.error(f"STK Push validation failed: {message}")
+        return jsonify({"success": False, "message": message}), 400
+    access_token = get_daraja_access_token()
+    if not access_token:
+        message = "Failed to authenticate with M-Pesa."
+        logging.error(f"STK Push failed: {message}")
+        return jsonify({"success": False, "message": message}), 500
+    stk_url = f"{DARAJA_API_BASE_URL}/mpesa/stkpush/v1/processrequest"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    password, timestamp = generate_stk_password()
+    payload = {
+        "BusinessShortCode": DARAJA_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": str(amount),
+        "PartyA": phone_number,
+        "PartyB": DARAJA_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": f"Order_{current_user.id}_{int(datetime.now().timestamp())}",
+        "TransactionDesc": "Payment for wholesale order"
+    }
+    logging.info(f"STK Push payload: {json.dumps(payload, indent=4)}")
+    try:
+        response = requests.post(stk_url, json=payload, headers=headers, timeout=30)
+        response_data = response.json()
+        logging.info(f"Daraja STK Push response: {response.status_code}, {response_data}")
+        if response.status_code == 200 and response_data.get("ResponseCode") == "0":
+            checkout_request_id = response_data.get("CheckoutRequestID")
+            ordered_at = datetime.utcnow()
+            order_ids = []
+            user_order_ids = []
+            admin_order_ids = []
+            try:
+                for item in cart_items:
+                    product = Product.query.get(item.product_id)
+                    if not product or item.quantity > product.quantity:
+                        db.session.rollback()
+                        message = f"Insufficient stock for {product.name if product else 'unknown product'}."
+                        logging.error(f"STK Push order creation failed: {message}")
+                        return jsonify({"success": False, "message": message}), 400
+                    product.quantity -= item.quantity
+                    total_price = item.product.price * item.quantity
+                    order = Order(
+                        user_id=current_user.id,
+                        product_id=item.product_id,
+                        quantity=item.quantity,
+                        total_price=total_price,
+                        status="pending",
+                        checkout_request_id=checkout_request_id,
+                        ordered_at=ordered_at
+                    )
+                    db.session.add(order)
+                    db.session.flush()
+                    order_ids.append(order.id)
+                    user_order = UserOrder(
+                        user_id=current_user.id,
+                        product_id=item.product_id,
+                        quantity=item.quantity,
+                        total_price=total_price,
+                        status="pending",
+                        pickup_location=current_user.address,
+                        ordered_at=ordered_at
+                    )
+                    db.session.add(user_order)
+                    db.session.flush()
+                    user_order_ids.append(user_order.id)
+                    admin_order = AdminOrder(
+                        user_id=current_user.id,
+                        product_id=item.product_id,
+                        quantity=item.quantity,
+                        total_price=total_price,
+                        status="pending",
+                        pickup_location=current_user.address,
+                        ordered_at=ordered_at
+                    )
+                    db.session.add(admin_order)
+                    db.session.flush()
+                    admin_order_ids.append(admin_order.id)
+                    transaction = StockTransaction(
+                        product_id=item.product_id,
+                        quantity=-item.quantity,
+                        transaction_date=ordered_at,
+                        type='order'
+                    )
+                    db.session.add(transaction)
+                    db.session.delete(item)
+                db.session.commit()
+                logging.info(f"Orders created: OrderIDs={order_ids}, UserOrderIDs={user_order_ids}, AdminOrderIDs={admin_order_ids}, CheckoutRequestID={checkout_request_id}")
+                check_and_notify_low_stock()
+                return jsonify({
+                    "success": True,
+                    "message": "STK Push initiated successfully. Please complete the payment on your phone.",
+                    "checkout_request_id": checkout_request_id
+                })
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Error creating orders: {str(e)}")
+                return jsonify({"success": False, "message": f"Order creation failed: {str(e)}"}), 500
+        else:
+            message = response_data.get("errorMessage", "Unknown error from M-Pesa API")
+            logging.error(f"STK Push failed: {message}, Response: {response_data}")
+            return jsonify({"success": False, "message": message}), response.status_code
+    except requests.RequestException as e:
+        logging.error(f"Error initiating STK Push: {str(e)}")
+        return jsonify({"success": False, "message": f"Network error: {str(e)}"}), 500
 
 @app.route('/mpesa/callback', methods=['POST'])
 def mpesa_callback():
     try:
-        # Log raw request data
-        raw_data = request.get_data(as_text=True)
-        print(f"Callback raw data at {datetime.utcnow()}: {raw_data}")
-
-        # Parse JSON data
-        data = request.get_json(silent=True)
-        if not data:
-            print(f"Callback error: Invalid or missing JSON data: {raw_data}")
-            return jsonify({"ResultCode": 1, "ResultDesc": "Invalid or missing JSON data"}), 400
-
-        # Log parsed JSON
-        print(f"Callback parsed JSON at {datetime.utcnow()}: {json.dumps(data, indent=4)}")
-
-        # Extract STK callback details
-        stk_callback = data.get("Body", {}).get("stkCallback", {})
-        if not stk_callback:
-            print("Callback error: Missing stkCallback in Body")
-            return jsonify({"ResultCode": 1, "ResultDesc": "Missing stkCallback in Body"}), 400
-
+        data = request.get_json()
+        logging.info(f"M-Pesa callback received: {json.dumps(data, indent=4)}")
+        if not data or "Body" not in data or "stkCallback" not in data["Body"]:
+            logging.error("Invalid callback payload: Missing Body or stkCallback")
+            return jsonify({"ResultCode": 1, "ResultDesc": "Invalid payload"}), 400
+        stk_callback = data["Body"]["stkCallback"]
         result_code = stk_callback.get("ResultCode")
-        result_desc = stk_callback.get("ResultDesc", "No description provided")
         checkout_request_id = stk_callback.get("CheckoutRequestID")
-
         if not checkout_request_id:
-            print("Callback error: Missing CheckoutRequestID")
+            logging.error("Callback missing CheckoutRequestID")
             return jsonify({"ResultCode": 1, "ResultDesc": "Missing CheckoutRequestID"}), 400
-
-        # Log all orders
-        all_orders = Order.query.all()
-        print(f"All orders in database: {[o.id for o in all_orders]}, "
-              f"CheckoutRequestIDs: {[o.checkout_request_id for o in all_orders]}")
-
-        # Find orders
         orders = Order.query.filter_by(checkout_request_id=checkout_request_id).all()
         if not orders:
-            print(f"Callback error: No orders found for CheckoutRequestID {checkout_request_id}")
-            return jsonify({"ResultCode": 1, "ResultDesc": f"No orders found for CheckoutRequestID {checkout_request_id}"}), 404
-
-        if result_code == 0:
-            # Extract M-Pesa receipt number
-            mpesa_receipt = None
-            callback_metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
-            for item in callback_metadata:
-                if item.get("Name") == "MpesaReceiptNumber":
-                    mpesa_receipt = item.get("Value")
-                    break
-
-            # Update orders
-            updated_order_ids = []
-            updated_user_order_ids = []
-            updated_admin_order_ids = []
+            logging.warning(f"No orders found for CheckoutRequestID: {checkout_request_id}")
+            return jsonify({"ResultCode": 0, "ResultDesc": "No matching orders"}), 200
+        if result_code != 0:
+            result_desc = stk_callback.get("ResultDesc", "Unknown error")
+            logging.error(f"Callback failed: ResultCode={result_code}, ResultDesc={result_desc}")
             for order in orders:
-                order.status = "completed"
-                order.mpesa_receipt_number = mpesa_receipt
-                updated_order_ids.append(order.id)
-
+                order.status = "failed"
                 user_order = UserOrder.query.filter(
                     UserOrder.user_id == order.user_id,
                     UserOrder.product_id == order.product_id,
@@ -1012,9 +958,7 @@ def mpesa_callback():
                     UserOrder.ordered_at == order.ordered_at
                 ).first()
                 if user_order:
-                    user_order.status = "completed"
-                    updated_user_order_ids.append(user_order.id)
-
+                    user_order.status = "failed"
                 admin_order = AdminOrder.query.filter(
                     AdminOrder.user_id == order.user_id,
                     AdminOrder.product_id == order.product_id,
@@ -1023,114 +967,43 @@ def mpesa_callback():
                     AdminOrder.ordered_at == order.ordered_at
                 ).first()
                 if admin_order:
-                    admin_order.status = "completed"
-                    updated_admin_order_ids.append(admin_order.id)
-
+                    admin_order.status = "failed"
             db.session.commit()
-            print(f"Callback processed successfully: checkout_request_id={checkout_request_id}, "
-                  f"orders_updated={updated_order_ids}, "
-                  f"user_orders_updated={updated_user_order_ids}, "
-                  f"admin_orders_updated={updated_admin_order_ids}")
-
-            check_and_notify_low_stock()
-            return jsonify({"ResultCode": 0, "ResultDesc": "Success"}), 200
-        else:
-            print(f"Callback failed: ResultCode={result_code}, ResultDesc={result_desc}")
-            return jsonify({"ResultCode": 1, "ResultDesc": f"Payment failed: {result_desc}"}), 400
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Callback error at {datetime.utcnow()}: {str(e)}, Raw data: {raw_data}")
-        return jsonify({"ResultCode": 1, "ResultDesc": f"Server error: {str(e)}"}), 500
-    
-@app.route('/debug', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def debug():
-    raw_data = request.get_data(as_text=True)
-    print(f"Debug request at {datetime.utcnow()}: Method={request.method}, Path={request.path}, "
-          f"Headers={dict(request.headers)}, Body={raw_data}")
-    return jsonify({"received": True, "method": request.method, "path": request.path, "body": raw_data}), 200
-  
-@app.route('/check_order_status', methods=['GET'])
-@login_required
-def check_order_status():
-    try:
-        recent_time = datetime.utcnow() - timedelta(minutes=10)  # Look back 10 minutes
-        completed_orders = Order.query.filter(
-            Order.user_id == current_user.id,
-            Order.status == 'completed',
-            Order.ordered_at >= recent_time
-        ).first()
-        return jsonify({"completed": bool(completed_orders)})
-    except Exception as e:
-        print(f"Error checking order status: {str(e)}")
-        return jsonify({"completed": False, "error": str(e)}), 500
-    
-@app.route('/get_orders', methods=['GET'])
-@login_required
-def get_orders():
-    try:
-        orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.ordered_at.desc()).all()
-        orders_data = [
-            {
-                'id': order.id,
-                'product_name': order.product.name,
-                'quantity': order.quantity,
-                'total_price': order.total_price,
-                'ordered_at': order.ordered_at.isoformat(),
-                'status': order.status,
-                'mpesa_receipt_number': order.mpesa_receipt_number
-            }
-            for order in orders
-        ]
-        return jsonify({'orders': orders_data})
-    except Exception as e:
-        print(f"Error fetching orders: {str(e)}")
-        return jsonify({'error': 'Failed to fetch orders'}), 500
-    
-    
-@app.route('/verify_payment', methods=['POST'])
-@login_required
-def verify_payment():
-    order_id = request.form.get("order_id")
-    mpesa_receipt = request.form.get("mpesa_receipt")
-    order = Order.query.get_or_404(order_id)
-    if order.user_id != current_user.id:
-        flash("Unauthorized action.", "danger")
-        return redirect(url_for('profile'))
-    if not mpesa_receipt:
-        flash("Please enter a valid M-Pesa receipt number.", "danger")
-        return redirect(url_for('profile'))
-    try:
-        order.status = "completed"
-        order.mpesa_receipt_number = mpesa_receipt
-        user_order = UserOrder.query.filter(
-            UserOrder.user_id == order.user_id,
-            UserOrder.product_id == order.product_id,
-            UserOrder.quantity == order.quantity,
-            UserOrder.total_price == order.total_price,
-            UserOrder.ordered_at == order.ordered_at
-        ).first()
-        if user_order:
-            user_order.status = "completed"
-        admin_order = AdminOrder.query.filter(
-            AdminOrder.user_id == order.user_id,
-            AdminOrder.product_id == order.product_id,
-            AdminOrder.quantity == order.quantity,
-            AdminOrder.total_price == order.total_price,
-            AdminOrder.ordered_at == order.ordered_at
-        ).first()
-        if admin_order:
-            admin_order.status = "completed"
-        UserCart.query.filter_by(user_id=current_user.id).delete()
+            return jsonify({"ResultCode": 0, "ResultDesc": "Callback processed, payment failed"}), 200
+        mpesa_receipt = None
+        callback_metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+        for item in callback_metadata:
+            if item.get("Name") == "MpesaReceiptNumber":
+                mpesa_receipt = item.get("Value")
+                break
+        for order in orders:
+            order.status = "completed"
+            order.mpesa_receipt_number = mpesa_receipt
+            user_order = UserOrder.query.filter(
+                UserOrder.user_id == order.user_id,
+                UserOrder.product_id == order.product_id,
+                UserOrder.quantity == order.quantity,
+                UserOrder.total_price == order.total_price,
+                UserOrder.ordered_at == order.ordered_at
+            ).first()
+            if user_order:
+                user_order.status = "completed"
+            admin_order = AdminOrder.query.filter(
+                AdminOrder.user_id == order.user_id,
+                AdminOrder.product_id == order.product_id,
+                AdminOrder.quantity == order.quantity,
+                AdminOrder.total_price == order.total_price,
+                AdminOrder.ordered_at == order.ordered_at
+            ).first()
+            if admin_order:
+                admin_order.status = "completed"
         db.session.commit()
-        print(f"Payment verified: order_id={order_id}, mpesa_receipt={mpesa_receipt}")
+        logging.info(f"Callback processed: CheckoutRequestID={checkout_request_id}, OrdersUpdated={len(orders)}, MpesaReceipt={mpesa_receipt}")
         check_and_notify_low_stock()
-        flash("Payment verified successfully.", "success")
+        return jsonify({"ResultCode": 0, "ResultDesc": "Success"})
     except Exception as e:
-        db.session.rollback()
-        print(f"Error verifying payment: {str(e)}")
-        flash(f"Error verifying payment: {str(e)}", "danger")
-    return redirect(url_for('profile'))
+        logging.error(f"Error in M-Pesa callback: {str(e)}")
+        return jsonify({"ResultCode": 1, "ResultDesc": f"Error processing callback: {str(e)}"}), 500
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -1188,7 +1061,7 @@ def reorder_level_report():
         if success:
             flash('Re-order level email sent successfully.', 'success')
         elif products:
-            flash('Failed to send re-order level email.', 'danger')
+            flash('Failed to send low stock email.', 'danger')
         else:
             flash('No products need restocking.', 'info')
         return redirect(url_for('reorder_level_report'))
@@ -1228,8 +1101,7 @@ def stock_calendar_report():
         }
         for item in stock_query
     ]
-    print(f"Stock data for {selected_date_str}:", 
-          [(item['product']['id'], item['product']['name'], item['estimated_stock']) for item in stock_data])
+    logging.info(f"Stock data for {selected_date_str}: {[(item['product']['id'], item['product']['name'], item['estimated_stock']) for item in stock_data]}")
     return render_template('stock_calendar_report.html', stock_data=stock_data, selected_date=selected_date)
 
 @app.route('/admin/reports/product_movement')
@@ -1242,8 +1114,7 @@ def product_movement_report():
         AdminOrder.ordered_at >= thirty_days_ago,
         AdminOrder.status != 'canceled'
     ).all()
-    print("All AdminOrder records (last 30 days, non-canceled):", 
-          [(o.id, o.product_id, o.ordered_at, o.status) for o in all_orders])
+    logging.info(f"All AdminOrder records (last 30 days, non-canceled): {[(o.id, o.product_id, o.ordered_at, o.status) for o in all_orders]}")
     product_orders = db.session.query(
         Product.id,
         Product.name,
@@ -1256,7 +1127,7 @@ def product_movement_report():
     ).group_by(Product.id, Category.name).having(
         db.func.count(AdminOrder.id) > 1
     ).all()
-    print("Products with >1 order:", [(p.id, p.name, p.num_orders, p.category_name) for p in product_orders])
+    logging.info(f"Products with >1 order: {[(p.id, p.name, p.num_orders, p.category_name) for p in product_orders]}")
     if not product_orders:
         product_orders = db.session.query(
             Product.id,
@@ -1268,7 +1139,7 @@ def product_movement_report():
             AdminOrder.ordered_at >= thirty_days_ago,
             AdminOrder.status != 'canceled'
         ).group_by(Product.id, Category.name).all()
-        print("All products with orders:", [(p.id, p.name, p.num_orders, p.category_name) for p in product_orders])
+        logging.info(f"All products with orders: {[(p.id, p.name, p.num_orders, p.category_name) for p in product_orders]}")
     fast_moving = sorted(product_orders, key=lambda x: x.num_orders or 0, reverse=True)[:5]
     slow_moving = sorted([p for p in product_orders if p.num_orders], key=lambda x: x.num_orders)[:5]
     return render_template('product_movement_report.html', fast_moving=fast_moving, slow_moving=slow_moving)
@@ -1285,11 +1156,6 @@ def order_status_report():
                          pending_orders=pending_orders, 
                          delivered_orders=delivered_orders, 
                          canceled_orders=canceled_orders)
-
-@app.route('/test_access_token')
-def test_access_token():
-    token = get_daraja_access_token()
-    return jsonify({"access_token": token, "status": "success" if token else "failed"})
 
 if __name__ == '__main__':
     app.run(debug=True)

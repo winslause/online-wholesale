@@ -1,0 +1,38 @@
+2025-05-25 14:04:58,471 INFO: StockTransaction schema: CREATE TABLE stock_transaction (
+	id INTEGER NOT NULL, 
+	product_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	transaction_date DATETIME NOT NULL, 
+	type VARCHAR(20) NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(product_id) REFERENCES product (id) ON DELETE CASCADE
+)
+2025-05-25 14:04:58,586 INFO: Database tables initialized.
+2025-05-25 14:04:58,641 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-05-25 14:04:58,641 INFO: [33mPress CTRL+C to quit[0m
+2025-05-25 14:05:05,032 INFO: 127.0.0.1 - - [25/May/2025 14:05:05] "[32mGET /profile HTTP/1.1[0m" 302 -
+2025-05-25 14:05:05,287 INFO: 127.0.0.1 - - [25/May/2025 14:05:05] "GET /?next=/profile HTTP/1.1" 200 -
+2025-05-25 14:05:06,977 INFO: 127.0.0.1 - - [25/May/2025 14:05:06] "[36mGET /static/uploads/ian-keefe-OgcJIKRnRC8-unsplash.jpg HTTP/1.1[0m" 304 -
+2025-05-25 14:05:07,060 INFO: 127.0.0.1 - - [25/May/2025 14:05:07] "[36mGET /static/css/main.css HTTP/1.1[0m" 304 -
+2025-05-25 14:05:07,093 INFO: 127.0.0.1 - - [25/May/2025 14:05:07] "[36mGET /static/uploads/jj.png HTTP/1.1[0m" 304 -
+2025-05-25 14:05:07,532 INFO: 127.0.0.1 - - [25/May/2025 14:05:07] "GET /?next=/profile HTTP/1.1" 200 -
+2025-05-25 14:05:24,026 INFO: 127.0.0.1 - - [25/May/2025 14:05:24] "[32mPOST /login HTTP/1.1[0m" 302 -
+2025-05-25 14:05:24,106 INFO: 127.0.0.1 - - [25/May/2025 14:05:24] "GET / HTTP/1.1" 200 -
+2025-05-25 14:05:24,247 INFO: 127.0.0.1 - - [25/May/2025 14:05:24] "[36mGET /static/css/main.css HTTP/1.1[0m" 304 -
+2025-05-25 14:05:24,250 INFO: 127.0.0.1 - - [25/May/2025 14:05:24] "[36mGET /static/uploads/ian-keefe-OgcJIKRnRC8-unsplash.jpg HTTP/1.1[0m" 304 -
+2025-05-25 14:05:24,253 INFO: 127.0.0.1 - - [25/May/2025 14:05:24] "[36mGET /static/uploads/jj.png HTTP/1.1[0m" 304 -
+2025-05-25 14:05:25,884 INFO: 127.0.0.1 - - [25/May/2025 14:05:25] "GET / HTTP/1.1" 200 -
+2025-05-25 14:05:28,611 INFO: Profile loaded: user_id=1, orders=0, cart_total=1.0
+2025-05-25 14:05:28,755 INFO: 127.0.0.1 - - [25/May/2025 14:05:28] "GET /profile HTTP/1.1" 200 -
+2025-05-25 14:05:28,862 INFO: 127.0.0.1 - - [25/May/2025 14:05:28] "[36mGET /static/css/main.css HTTP/1.1[0m" 304 -
+2025-05-25 14:05:28,873 INFO: 127.0.0.1 - - [25/May/2025 14:05:28] "[36mGET /static/uploads/jj.png HTTP/1.1[0m" 304 -
+2025-05-25 14:05:28,878 INFO: 127.0.0.1 - - [25/May/2025 14:05:28] "[36mGET /static/css/profile.css HTTP/1.1[0m" 304 -
+2025-05-25 14:05:29,390 INFO: Profile loaded: user_id=1, orders=0, cart_total=1.0
+2025-05-25 14:05:29,392 INFO: 127.0.0.1 - - [25/May/2025 14:05:29] "GET /profile HTTP/1.1" 200 -
+2025-05-25 14:05:37,835 INFO: STK Push request: user_id=1, phone_number=254769525570, amount=1.0
+2025-05-25 14:05:37,859 DEBUG: Starting new HTTPS connection (1): sandbox.safaricom.co.ke:443
+2025-05-25 14:05:38,573 DEBUG: https://sandbox.safaricom.co.ke:443 "GET /oauth/v1/generate?grant_type=client_credentials HTTP/1.1" 400 0
+2025-05-25 14:05:38,574 ERROR: Error generating access token: 400 Client Error: Bad Request for url: https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials, Response: 
+2025-05-25 14:05:38,574 ERROR: STK Push failed: Failed to authenticate with M-Pesa.
+2025-05-25 14:05:38,574 INFO: 127.0.0.1 - - [25/May/2025 14:05:38] "[35m[1mPOST /initiate_stk_push HTTP/1.1[0m" 500 -

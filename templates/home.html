@@ -33,12 +33,11 @@
     .password-checklist li.invalid {
       color: #dc3545;
     }
-    /* New styles for eye icon inside input */
     .password-input-wrapper {
       position: relative;
     }
     .password-input-wrapper input {
-      padding-right: 40px; /* Space for the eye icon */
+      padding-right: 40px;
     }
     .password-input-wrapper .toggle-icon {
       position: absolute;
@@ -46,11 +45,66 @@
       right: 10px;
       transform: translateY(-50%);
       cursor: pointer;
-      color: #6c757d; /* Bootstrap secondary color */
+      color: #6c757d;
       font-size: 1rem;
     }
     .password-input-wrapper .toggle-icon:hover {
       color: #495057;
+    }
+    /* Checkout modal styles */
+    .modal-content {
+      background-color: #fff;
+      color: #333;
+      border-radius: 10px;
+    }
+    .modal-header {
+      background-color: #e9ecef;
+      color: #333;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    .modal-body {
+      padding: 20px;
+    }
+    .alert-section p {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    .modal-body .bg-light {
+      background-color: #f8f9fa !important;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .modal-body .form-control {
+      background-color: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #phone-number {
+      max-width: 250px;
+    }
+    #payment-status {
+      font-size: 0.9rem;
+      color: #28a745;
+    }
+    #payment-status.error {
+      color: #dc3545;
+    }
+    .modal-body .btn-checkout {
+      background-color: #28a745;
+      color: #fff;
+      width: 100%;
+      border-radius: 5px;
+    }
+    .modal-body .btn-checkout:hover {
+      background-color: #218838;
+    }
+    @media (max-width: 767.98px) {
+      #phone-number {
+        max-width: 100%;
+      }
     }
   </style>
 </head>
@@ -227,7 +281,6 @@
           <p><strong>Description:</strong> <span id="productDescription"></span></p>
           <p><strong>Price:</strong> KES <span id="productPrice"></span></p>
           <p><strong>Quantity Available:</strong> <span id="productQuantity"></span></p>
-          <!-- Image Carousel -->
           <div id="productImagesCarousel" class="carousel slide" data-ride="carousel">
             <div class="carousel-inner" id="productImages"></div>
             <a class="carousel-control-prev" href="#productImagesCarousel" role="button" data-slide="prev">
@@ -239,7 +292,6 @@
               <span class="sr-only">Next</span>
             </a>
           </div>
-          <!-- Add to Cart Form -->
           <form id="productAddToCartForm" action="{{ url_for('add_to_cart', product_id=0) }}" method="post" class="add-to-cart-form mt-3">
             <div class="input-group input-group-sm">
               <input type="number" class="form-control" id="modalQuantity" name="quantity" value="1" min="1" required>
@@ -325,15 +377,15 @@
               <div id="contactPersonValidation" class="validation-message"></div>
             </div>
             <div class="form-group">
-  <label for="email">Email address</label>
-  <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
-  <div id="emailValidation" class="validation-message">
-    <ul class="password-checklist">
-      <li id="atSymbolCheck">Email must include @ symbol</li>
-      <li id="formatCheck">Valid email format (e.g., user@domain.com)</li>
-    </ul>
-  </div>
-</div>
+              <label for="email">Email address</label>
+              <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+              <div id="emailValidation" class="validation-message">
+                <ul class="password-checklist">
+                  <li id="atSymbolCheck">Email must include @ symbol</li>
+                  <li id="formatCheck">Valid email format (e.g., user@domain.com)</li>
+                </ul>
+              </div>
+            </div>
             <div class="form-group">
               <label for="phone">Phone Number</label>
               <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter phone number" required>
@@ -374,7 +426,6 @@
       </div>
     </div>
   </div>
-  
 
   <!-- Admin Login Modal -->
   <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
@@ -433,7 +484,7 @@
               {% endfor %}
             </ul>
             <p class="total-amount">Total Amount: KES {{ total_amount.value }}</p>
-            <button style="display: none !important;" class="btn-checkout" data-toggle="modal" data-target="#checkoutModal" data-dismiss="modal">Checkout</button>
+            <button class="btn-checkout" data-toggle="modal" data-target="#checkoutModal" data-dismiss="modal">Checkout</button>
           {% else %}
             <p>Please log in to view your cart.</p>
           {% endif %}
@@ -447,7 +498,7 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="checkoutModalLabel">Checkout</h5>
+          <h5 class="modal-title" id="checkoutModalLabel">Checkout with M-Pesa</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">×</span>
           </button>
@@ -455,30 +506,31 @@
         <div class="modal-body">
           {% if current_user.is_authenticated %}
             <div class="alert-section">
-              <p><strong>Please send KES {{ cart_total }} to M-Pesa number 0712345678</strong></p>
-              <p><strong>Enter the transaction code below:</strong></p>
+              <p><strong>Total Amount: KES {{ cart_total | round(2) }}</strong></p>
+              <p><strong>Enter your M-Pesa phone number to receive an STK Push:</strong></p>
             </div>
             <ul class="list-unstyled">
-              {% set total_amount = namespace(value=0) %}
               {% for cart_item in cart_items %}
                 {% set item_total = cart_item.product.price * cart_item.quantity %}
-                {% set total_amount.value = total_amount.value + item_total %}
                 <li class="mb-3 p-3 bg-light rounded">
                   <h6>{{ cart_item.product.name }}</h6>
-                  <p>Price: KES {{ cart_item.product.price }}</p>
+                  <p>Description: {{ cart_item.product.description }}</p>
+                  <p>Price: KES {{ cart_item.product.price | round(2) }}</p>
                   <p>Quantity: {{ cart_item.quantity }}</p>
-                  <p>Item Total: KES {{ item_total }}</p>
+                  <p>Item Total: KES {{ item_total | round(2) }}</p>
                 </li>
               {% endfor %}
             </ul>
-            <p class="total-amount">Total Amount: KES {{ total_amount.value }}</p>
-            <form action="{{ url_for('checkout') }}" method="POST" id="checkoutForm">
+            <p class="total-amount">Total Amount: KES {{ cart_total | round(2) }}</p>
+            <form action="{{ url_for('initiate_stk_push') }}" method="POST" id="checkoutForm">
               <div class="form-group">
-                <label for="transaction-code">Transaction Code:</label>
-                <input type="text" class="form-control" id="transaction-code" name="transaction-code" placeholder="Enter transaction code" required>
+                <label for="phone-number">Phone Number (e.g., 2547XXXXXXXX)</label>
+                <input type="text" class="form-control" id="phone-number" name="phone_number" placeholder="Enter phone number" pattern="254[7|1][0-9]{8}" title="Phone number must start with 2547 or 2541 followed by 8 digits" required>
               </div>
-              <button type="submit" class="btn-checkout">Checkout</button>
+              <input type="hidden" name="amount" value="{{ cart_total | round(0) }}">
+              <button type="submit" class="btn-checkout">Initiate Payment</button>
             </form>
+            <div id="payment-status" class="mt-3"></div>
           {% else %}
             <p>Please log in to proceed with checkout.</p>
           {% endif %}
@@ -502,7 +554,7 @@
         </div>
         <div class="modal-body">
           {% if current_user.is_authenticated %}
-            <ul class="list-unstyled">
+            <ul class="list-unordered">
               {% for order in orders %}
                 <li class="mb-3 p-3 bg-light rounded">
                   <p><strong>Product:</strong> {{ order.product.name }}</p>
@@ -538,12 +590,10 @@ $(document).ready(function() {
     $(this).find('i').toggleClass('fa-bars fa-times');
   });
 
-  // Ensure sidebar is hidden by default on small screens
   if ($(window).width() < 768) {
     $('#sidebarContent').hide();
   }
 
-  // Handle window resize
   $(window).resize(function() {
     if ($(window).width() >= 768) {
       $('#sidebarContent').show();
@@ -637,13 +687,11 @@ $(document).ready(function() {
     }
   });
 
-  // Debug add to cart form submission
   $('.add-to-cart-form').on('submit', function(e) {
     var quantity = $(this).find('input[name="quantity"]').val();
     console.log('Add to cart submitted for ' + $(this).attr('action') + ', quantity: ' + quantity);
   });
 
-  // Debug modal triggers
   $('[data-toggle="modal"]').on('click', function(e) {
     e.preventDefault();
     var target = $(this).data('target');
@@ -651,7 +699,6 @@ $(document).ready(function() {
     $(target).modal('show');
   });
 
-  // Debug modal events
   $('.modal').on('show.bs.modal', function() {
     console.log('Modal opened: #' + $(this).attr('id'));
   }).on('hide.bs.modal', function() {
@@ -672,7 +719,6 @@ $(document).ready(function() {
       $('#categorySelection').hide();
       $('#companyNameLabel').text(selectedCategory === 'household' ? 'Surname' : 'Company Name');
       console.log('Category selected: ' + selectedCategory);
-      // Trigger initial validation to show feedback on form display
       validateRegistrationForm();
     } else {
       alert('Please select a category.');
@@ -691,7 +737,6 @@ $(document).ready(function() {
 
     var isValid = true;
 
-    // Company Name/Surname Validation
     if (companyName === '') {
       $('#companyNameValidation').text('Please enter a name').addClass('validation-error').removeClass('validation-success');
       isValid = false;
@@ -702,7 +747,6 @@ $(document).ready(function() {
       $('#companyNameValidation').text('Valid name').addClass('validation-success').removeClass('validation-error');
     }
 
-    // Contact Person Validation
     if (contactPerson === '') {
       $('#contactPersonValidation').text('Please enter a contact person name').addClass('validation-error').removeClass('validation-success');
       isValid = false;
@@ -713,22 +757,31 @@ $(document).ready(function() {
       $('#contactPersonValidation').text('Valid contact person name').addClass('validation-success').removeClass('validation-error');
     }
 
-    // Email Validation
     var emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (email === '') {
+      $('#atSymbolCheck, #formatCheck').addClass('invalid').removeClass('valid');
       $('#emailValidation').text('Please enter an email').addClass('validation-error').removeClass('validation-success');
       isValid = false;
-    } else if (!email.includes('@')) {
-      $('#emailValidation').text('Email must include @ symbol').addClass('validation-error').removeClass('validation-success');
-      isValid = false;
-    } else if (!emailRegex.test(email)) {
-      $('#emailValidation').text('Please enter a valid email (e.g., user@domain.com)').addClass('validation-error').removeClass('validation-success');
-      isValid = false;
     } else {
-      $('#emailValidation').text('Valid email').addClass('validation-success').removeClass('validation-error');
+      if (!email.includes('@')) {
+        $('#atSymbolCheck').addClass('invalid').removeClass('valid');
+        isValid = false;
+      } else {
+        $('#atSymbolCheck').addClass('valid').removeClass('invalid');
+      }
+      if (!emailRegex.test(email)) {
+        $('#formatCheck').addClass('invalid').removeClass('valid');
+        isValid = false;
+      } else {
+        $('#formatCheck').addClass('valid').removeClass('invalid');
+      }
+      if (email.includes('@') && emailRegex.test(email)) {
+        $('#emailValidation').text('Valid email').addClass('validation-success').removeClass('validation-error');
+      } else {
+        $('#emailValidation').text('Please enter a valid email (e.g., user@domain.com)').addClass('validation-error').removeClass('validation-success');
+      }
     }
 
-    // Phone Number Validation
     var phoneRegex = /^\d{10,15}$/;
     if (phone === '') {
       $('#phoneValidation').text('Please enter a phone number').addClass('validation-error').removeClass('validation-success');
@@ -743,7 +796,6 @@ $(document).ready(function() {
       $('#phoneValidation').text('Valid phone number').addClass('validation-success').removeClass('validation-error');
     }
 
-    // Address Validation
     if (address === '') {
       $('#addressValidation').text('Please enter an address').addClass('validation-error').removeClass('validation-success');
       isValid = false;
@@ -751,7 +803,6 @@ $(document).ready(function() {
       $('#addressValidation').text('Valid address').addClass('validation-success').removeClass('validation-error');
     }
 
-    // Password Validation
     var isPasswordValid = true;
     if (password === '') {
       $('#lengthCheck, #uppercaseCheck, #lowercaseCheck, #numberCheck, #specialCharCheck').addClass('invalid').removeClass('valid');
@@ -759,46 +810,36 @@ $(document).ready(function() {
       isPasswordValid = false;
       isValid = false;
     } else {
-      // Length Check
       if (password.length < 8) {
         $('#lengthCheck').addClass('invalid').removeClass('valid');
         isPasswordValid = false;
       } else {
         $('#lengthCheck').addClass('valid').removeClass('invalid');
       }
-
-      // Uppercase Check
       if (!/[A-Z]/.test(password)) {
         $('#uppercaseCheck').addClass('invalid').removeClass('valid');
         isPasswordValid = false;
       } else {
         $('#uppercaseCheck').addClass('valid').removeClass('invalid');
       }
-
-      // Lowercase Check
       if (!/[a-z]/.test(password)) {
         $('#lowercaseCheck').addClass('invalid').removeClass('valid');
         isPasswordValid = false;
       } else {
         $('#lowercaseCheck').addClass('valid').removeClass('invalid');
       }
-
-      // Number Check
       if (!/\d/.test(password)) {
         $('#numberCheck').addClass('invalid').removeClass('valid');
         isPasswordValid = false;
       } else {
         $('#numberCheck').addClass('valid').removeClass('invalid');
       }
-
-      // Special Character Check
       if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
         $('#specialCharCheck').addClass('invalid').removeClass('valid');
         isPasswordValid = false;
       } else {
         $('#specialCharCheck').addClass('valid').removeClass('invalid');
       }
-
       if (isPasswordValid) {
         $('#passwordValidation').text('Password is strong').addClass('validation-success').removeClass('validation-error');
       } else {
@@ -807,7 +848,6 @@ $(document).ready(function() {
       }
     }
 
-    // Confirm Password Validation
     var passwordsMatch = password === confirmPassword && password !== '';
     if (confirmPassword === '') {
       $('#confirmPasswordValidation').text('Please confirm your password').addClass('validation-error').removeClass('validation-success');
@@ -819,10 +859,8 @@ $(document).ready(function() {
       $('#confirmPasswordValidation').text('Passwords match').addClass('validation-success').removeClass('validation-error');
     }
 
-    // Enable submit button only if all fields are valid
     $('#submitBtn').prop('disabled', !isValid);
 
-    // Optional AJAX for server-side password validation
     if (password !== '' && confirmPassword !== '') {
       $.ajax({
         url: '{{ url_for("validate_password") }}',
@@ -833,7 +871,6 @@ $(document).ready(function() {
           console.log('Server validation response:', response);
           if (!response.isPasswordValid) {
             $('#passwordValidation').text(response.passwordErrors.join(', ')).addClass('validation-error').removeClass('validation-success');
-            isPasswordValid = false;
             isValid = false;
           }
           if (!response.passwordsMatch) {
@@ -844,7 +881,6 @@ $(document).ready(function() {
         },
         error: function(xhr, status, error) {
           console.error('Password AJAX error:', status, error);
-          // Allow client-side validation to proceed even if server fails
         }
       });
     }
@@ -852,7 +888,6 @@ $(document).ready(function() {
     return isValid;
   }
 
-  // Dedicated email input event handler for immediate feedback
   $('#email').on('input keyup change paste', function(e) {
     console.log('Email input event:', {
       field: $(this).attr('id'),
@@ -862,7 +897,6 @@ $(document).ready(function() {
     validateRegistrationForm();
   });
 
-  // Bind real-time validation to other registration form inputs
   $('#registrationForm input:not(#email), #registrationForm textarea').on('input keyup change paste', function(e) {
     console.log('Registration input event:', {
       field: $(this).attr('id'),
@@ -872,7 +906,6 @@ $(document).ready(function() {
     validateRegistrationForm();
   });
 
-  // Password visibility toggle
   $('#togglePassword').on('click', function() {
     var type = $('#registerPassword').attr('type') === 'password' ? 'text' : 'password';
     $('#registerPassword').attr('type', type);
@@ -897,7 +930,6 @@ $(document).ready(function() {
     validateLoginForm();
   });
 
-  // Form submission
   $('#registrationForm').on('submit', function(e) {
     if (!validateRegistrationForm()) {
       e.preventDefault();
@@ -908,7 +940,6 @@ $(document).ready(function() {
     }
   });
 
-  // Login Validation
   function validateLoginForm() {
     var email = $('#loginEmail').val().trim();
     var password = $('#loginPassword').val().trim();
@@ -961,7 +992,6 @@ $(document).ready(function() {
     }
   });
 
-  // Admin Login Validation
   function validateAdminLoginForm() {
     var username = $('#admin_username').val().trim();
     var password = $('#admin_password').val().trim();
@@ -1000,7 +1030,6 @@ $(document).ready(function() {
     }
   });
 
-  // Debug modal open
   $('#loginModal').on('show.bs.modal', function() {
     validateLoginForm();
   });
@@ -1013,7 +1042,6 @@ $(document).ready(function() {
     validateAdminLoginForm();
   });
 
-  // Prevent modal from clearing inputs
   $('#loginModal, #registerModal, #adminLoginModal, #checkoutModal, #productDetailsModal').on('hidden.bs.modal', function() {
     var formId = $(this).attr('id') === 'loginModal' ? '#loginForm' :
                  $(this).attr('id') === 'registerModal' ? '#registrationForm' :
@@ -1024,18 +1052,39 @@ $(document).ready(function() {
     };
   });
 
-  // Debug checkout form submission
-  $('#checkoutForm').on('submit', function() {
-    const transactionCode = $('#transaction-code').val();
-    console.log('Checkout form submitted:', { transactionCode });
+  // Checkout form submission
+  $('#checkoutForm').on('submit', function(e) {
+    e.preventDefault();
+    const phoneNumber = $('#phone-number').val();
+    console.log('Checkout form submitted:', { phoneNumber });
+
+    $.ajax({
+      url: $(this).attr('action'),
+      method: 'POST',
+      data: $(this).serialize(),
+      success: function(response) {
+        if (response.success) {
+          $('#payment-status').text('STK Push sent to your phone. Please complete the payment. Your order status will update automatically.').removeClass('error');
+          console.log('STK Push initiated:', response);
+          $('#checkoutModal').modal('hide');
+          location.reload();
+        } else {
+          $('#payment-status').text('Failed to initiate payment: ' + response.message).addClass('error');
+          console.error('STK Push failed:', response.message);
+        }
+      },
+      error: function(xhr, status, error) {
+        $('#payment-status').text('Error initiating payment. Please try again.').addClass('error');
+        console.error('AJAX error initiating STK Push:', status, error);
+      }
+    });
   });
 
-  // Debug cancel order submission
   $('.btn-delete').on('click', function() {
     const form = $(this).closest('form');
     console.log('Cancel order or remove item clicked:', { action: form.attr('action') });
   });
 });
-</script>
+  </script>
 </body>
 </html>
