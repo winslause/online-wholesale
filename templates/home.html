@@ -7,6 +7,52 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <style>
+    .validation-message {
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+    .validation-error {
+      color: #dc3545;
+    }
+    .validation-success {
+      color: #28a745;
+    }
+    .password-checklist {
+      list-style: none;
+      padding: 0;
+      margin: 5px 0 0 0;
+    }
+    .password-checklist li {
+      font-size: 0.85em;
+      margin-bottom: 3px;
+    }
+    .password-checklist li.valid {
+      color: #28a745;
+    }
+    .password-checklist li.invalid {
+      color: #dc3545;
+    }
+    /* New styles for eye icon inside input */
+    .password-input-wrapper {
+      position: relative;
+    }
+    .password-input-wrapper input {
+      padding-right: 40px; /* Space for the eye icon */
+    }
+    .password-input-wrapper .toggle-icon {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #6c757d; /* Bootstrap secondary color */
+      font-size: 1rem;
+    }
+    .password-input-wrapper .toggle-icon:hover {
+      color: #495057;
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -173,7 +219,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="productDetailsModalLabel">Product Details</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -219,7 +265,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="loginModalLabel">Wholesalers Login</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -229,10 +275,12 @@
               <input type="email" class="form-control" id="loginEmail" name="email" placeholder="Enter email" required>
               <div id="emailValidation" class="validation-message"></div>
             </div>
-            <div class="form-group password-toggle">
+            <div class="form-group">
               <label for="loginPassword">Password</label>
-              <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter password" required>
-              <i class="fas fa-eye toggle-icon" id="toggleLoginPassword"></i>
+              <div class="password-input-wrapper">
+                <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter password" required>
+                <i class="fas fa-eye toggle-icon" id="toggleLoginPassword"></i>
+              </div>
               <div id="passwordValidation" class="validation-message"></div>
             </div>
             <button type="submit" class="btn btn-success btn-block" id="loginSubmitBtn" disabled>Login</button>
@@ -249,7 +297,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="registerModalLabel">Wholesalers Registration</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -269,33 +317,55 @@
             <div class="form-group">
               <label for="companyName" id="companyNameLabel">Username</label>
               <input type="text" class="form-control" id="companyName" name="companyName" placeholder="Enter username" required>
+              <div id="companyNameValidation" class="validation-message"></div>
             </div>
             <div class="form-group">
               <label for="contactPerson">Contact Person</label>
               <input type="text" class="form-control" id="contactPerson" name="contactPerson" placeholder="Enter contact person name" required>
+              <div id="contactPersonValidation" class="validation-message"></div>
             </div>
             <div class="form-group">
-              <label for="email">Email address</label>
-              <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
-            </div>
+  <label for="email">Email address</label>
+  <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+  <div id="emailValidation" class="validation-message">
+    <ul class="password-checklist">
+      <li id="atSymbolCheck">Email must include @ symbol</li>
+      <li id="formatCheck">Valid email format (e.g., user@domain.com)</li>
+    </ul>
+  </div>
+</div>
             <div class="form-group">
               <label for="phone">Phone Number</label>
               <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter phone number" required>
+              <div id="phoneValidation" class="validation-message"></div>
             </div>
             <div class="form-group">
               <label for="address">Address</label>
               <textarea class="form-control" id="address" name="address" rows="3" placeholder="Describe your address" required></textarea>
+              <div id="addressValidation" class="validation-message"></div>
             </div>
-            <div class="form-group password-toggle">
+            <div class="form-group">
               <label for="registerPassword">Password</label>
-              <input type="password" class="form-control" id="registerPassword" name="password" placeholder="Enter password (min 8 chars, mix of letters, numbers, special chars)" required>
-              <i class="fas fa-eye toggle-icon" id="togglePassword"></i>
-              <div id="passwordValidation" class="validation-message"></div>
+              <div class="password-input-wrapper">
+                <input type="password" class="form-control" id="registerPassword" name="password" placeholder="Enter password (min 8 chars, mix of letters, numbers, special chars)" required>
+                <i class="fas fa-eye toggle-icon" id="togglePassword"></i>
+              </div>
+              <div id="passwordValidation" class="validation-message">
+                <ul class="password-checklist">
+                  <li id="lengthCheck">At least 8 characters</li>
+                  <li id="uppercaseCheck">At least one uppercase letter</li>
+                  <li id="lowercaseCheck">At least one lowercase letter</li>
+                  <li id="numberCheck">At least one number</li>
+                  <li id="specialCharCheck">At least one special character</li>
+                </ul>
+              </div>
             </div>
-            <div class="form-group password-toggle">
+            <div class="form-group">
               <label for="confirmPassword">Confirm Password</label>
-              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required>
-              <i class="fas fa-eye toggle-icon" id="toggleConfirmPassword"></i>
+              <div class="password-input-wrapper">
+                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirm password" required>
+                <i class="fas fa-eye toggle-icon" id="toggleConfirmPassword"></i>
+              </div>
               <div id="confirmPasswordValidation" class="validation-message"></div>
             </div>
             <button type="submit" class="btn btn-success btn-block" id="submitBtn" disabled>Submit</button>
@@ -304,6 +374,7 @@
       </div>
     </div>
   </div>
+  
 
   <!-- Admin Login Modal -->
   <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
@@ -312,7 +383,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="adminLoginModalLabel">Admin Login</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -339,7 +410,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="cartModalLabel">Your Cart</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -378,7 +449,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="checkoutModalLabel">Checkout</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -426,7 +497,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="ordersModalLabel">Your Orders</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
         <div class="modal-body">
@@ -460,493 +531,511 @@
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script>
-    $(document).ready(function() {
-      // Sidebar toggle for small screens
-      $('#sidebarToggle').on('click', function() {
-        $('#sidebarContent').slideToggle(200);
-        $(this).find('i').toggleClass('fa-bars fa-times');
-      });
+$(document).ready(function() {
+  // Sidebar toggle for small screens
+  $('#sidebarToggle').on('click', function() {
+    $('#sidebarContent').slideToggle(200);
+    $(this).find('i').toggleClass('fa-bars fa-times');
+  });
 
-      // Ensure sidebar is hidden by default on small screens
-      if ($(window).width() < 768) {
-        $('#sidebarContent').hide();
+  // Ensure sidebar is hidden by default on small screens
+  if ($(window).width() < 768) {
+    $('#sidebarContent').hide();
+  }
+
+  // Handle window resize
+  $(window).resize(function() {
+    if ($(window).width() >= 768) {
+      $('#sidebarContent').show();
+      $('#sidebarToggle').find('i').removeClass('fa-times').addClass('fa-bars');
+    } else {
+      $('#sidebarContent').hide();
+    }
+  });
+
+  // Populate product details modal
+  $('.product-link').on('click', function(e) {
+    e.preventDefault();
+    try {
+      var productId = $(this).attr('data-id');
+      var name = $(this).attr('data-name');
+      var description = $(this).attr('data-description') || 'No description available';
+      var price = $(this).attr('data-price');
+      var quantity = $(this).attr('data-quantity');
+      var images = $(this).attr('data-images') ? $(this).attr('data-images').split(',') : [];
+
+      if (!productId || !name || !price || !quantity) {
+        console.error('Missing product data:', { id: productId, name: name, price: price, quantity: quantity });
+        alert('Error: Product data is incomplete.');
+        return;
       }
 
-      // Handle window resize
-      $(window).resize(function() {
-        if ($(window).width() >= 768) {
-          $('#sidebarContent').show();
-          $('#sidebarToggle').find('i').removeClass('fa-times').addClass('fa-bars');
-        } else {
-          $('#sidebarContent').hide();
-        }
-      });
+      $('#productName').text(name);
+      $('#productDescription').text(description);
+      $('#productPrice').text(parseFloat(price).toFixed(2));
+      $('#productQuantity').text(quantity);
 
-      // Populate product details modal
-      $('.product-link').on('click', function(e) {
-        e.preventDefault();
-        try {
-          // Retrieve data attributes
-          var productId = $(this).attr('data-id');
-          var name = $(this).attr('data-name');
-          var description = $(this).attr('data-description') || 'No description available';
-          var price = $(this).attr('data-price');
-          var quantity = $(this).attr('data-quantity');
-          var images = $(this).attr('data-images') ? $(this).attr('data-images').split(',') : [];
-
-          console.log('Product link clicked:', {
-            id: productId,
-            name: name,
-            description: description,
-            price: price,
-            quantity: quantity,
-            images: images
-          });
-
-          // Validate data
-          if (!productId || !name || !price || !quantity) {
-            console.error('Missing product data:', { id: productId, name: name, price: price, quantity: quantity });
-            alert('Error: Product data is incomplete.');
-            return;
-          }
-
-          // Update modal content
-          $('#productName').text(name);
-          $('#productDescription').text(description);
-          $('#productPrice').text(parseFloat(price).toFixed(2));
-          $('#productQuantity').text(quantity);
-
-          // Update carousel
-          $('#productImages').empty();
-          if (images.length > 0) {
-            images.forEach(function(image, index) {
-              if (image.trim()) {
-                var activeClass = index === 0 ? 'active' : '';
-                var imageUrl = '/static/uploads/' + image.trim();
-                $('#productImages').append(`
-                  <div class="carousel-item ${activeClass}">
-                    <img src="${imageUrl}" class="d-block w-100 product-carousel-img" alt="${name}">
-                  </div>
-                `);
-                console.log('Added carousel image:', imageUrl);
-              }
-            });
-          } else {
+      $('#productImages').empty();
+      if (images.length > 0) {
+        images.forEach(function(image, index) {
+          if (image.trim()) {
+            var activeClass = index === 0 ? 'active' : '';
+            var imageUrl = '/static/uploads/' + image.trim();
             $('#productImages').append(`
-              <div class="carousel-item active">
-                <img src="/static/uploads/placeholder.jpg" class="d-block w-100 product-carousel-img" alt="No image available">
+              <div class="carousel-item ${activeClass}">
+                <img src="${imageUrl}" class="d-block w-100 product-carousel-img" alt="${name}">
               </div>
             `);
-            console.log('No images available, using placeholder');
-          }
-
-          // Update form action and quantity input
-          var baseUrl = '{{ url_for("add_to_cart", product_id=0) }}'.replace('/0', `/${productId}`);
-          $('#productAddToCartForm').attr('action', baseUrl);
-          $('#modalQuantity').attr('max', quantity).val(1);
-
-          console.log('Modal populated:', {
-            action: baseUrl,
-            maxQuantity: quantity
-          });
-
-          // Show modal
-          $('#productDetailsModal').modal('show');
-        } catch (error) {
-          console.error('Error populating modal:', error);
-          alert('Error loading product details. Please try again.');
-        }
-      });
-
-      // Plus/Minus buttons for quantity input (both card and modal)
-      $('.btn-plus').on('click', function() {
-        var productId = $(this).data('product-id');
-        var input = productId === 'modal' ? $('#modalQuantity') : $('#quantity_' + productId);
-        var newValue = parseInt(input.val()) + 1;
-        if (newValue <= parseInt(input.attr('max'))) {
-          input.val(newValue);
-          console.log('Plus button clicked for product ' + productId + ', new value: ' + newValue);
-        } else {
-          alert('Cannot exceed available quantity.');
-        }
-      });
-
-      $('.btn-minus').on('click', function() {
-        var productId = $(this).data('product-id');
-        var input = productId === 'modal' ? $('#modalQuantity') : $('#quantity_' + productId);
-        var newValue = parseInt(input.val()) - 1;
-        if (newValue >= 1) {
-          input.val(newValue);
-          console.log('Minus button clicked for product ' + productId + ', new value: ' + newValue);
-        }
-      });
-
-      // Debug add to cart form submission (both card and modal)
-      $('.add-to-cart-form').on('submit', function(e) {
-        var quantity = $(this).find('input[name="quantity"]').val();
-        console.log('Add to cart submitted for ' + $(this).attr('action') + ', quantity: ' + quantity);
-      });
-
-      // Debug modal triggers
-      $('[data-toggle="modal"]').on('click', function(e) {
-        e.preventDefault();
-        var target = $(this).data('target');
-        console.log('Modal trigger clicked: ' + target);
-        $(target).modal('show');
-      });
-
-      // Debug modal events
-      $('.modal').on('show.bs.modal', function() {
-        console.log('Modal opened: #' + $(this).attr('id'));
-      }).on('hide.bs.modal', function() {
-        console.log('Modal closed: #' + $(this).attr('id'));
-        $('#loginForm input, #registrationForm input, #adminLoginForm input, #checkoutForm input, #productAddToCartForm input').each(function() {
-          console.log('Input state on modal hide:', {
-            id: $(this).attr('id'),
-            value: $(this).attr('type') === 'password' ? '[HIDDEN]' : $(this).val()
-          });
-        });
-      });
-
-      // Category selection for registration
-      $('#continueBtn').on('click', function() {
-        var selectedCategory = $('input[name="category"]:checked').val();
-        if (selectedCategory) {
-          $('#registrationForm').show();
-          $('#categorySelection').hide();
-          $('#companyNameLabel').text(selectedCategory === 'household' ? 'Surname' : 'Company Name');
-          console.log('Category selected: ' + selectedCategory);
-        } else {
-          alert('Please select a category.');
-        }
-      });
-
-      // Register: Password validation with AJAX
-      function validateRegisterPasswords() {
-        var password = $('#registrationForm #registerPassword').val().trim();
-        var confirmPassword = $('#registrationForm #confirmPassword').val().trim();
-
-        console.log('Register client-side validation:', {
-          password: '[HIDDEN]',
-          passwordLength: password.length,
-          confirmPassword: '[HIDDEN]',
-          confirmPasswordLength: confirmPassword.length
-        });
-
-        if (password === '') {
-          console.warn('Register password field is empty');
-          $('#passwordValidation').text('Please enter a password').addClass('validation-error').removeClass('validation-success');
-          $('#submitBtn').prop('disabled', true);
-          return;
-        }
-
-        var passwordErrors = [];
-        var isPasswordValid = true;
-
-        if (password.length < 8) {
-          passwordErrors.push('At least 8 characters required');
-          isPasswordValid = false;
-        }
-        if (!/[A-Z]/.test(password)) {
-          passwordErrors.push('At least one uppercase letter required');
-          isPasswordValid = false;
-        }
-        if (!/[a-z]/.test(password)) {
-          passwordErrors.push('At least one lowercase letter required');
-          isPasswordValid = false;
-        }
-        if (!/\d/.test(password)) {
-          passwordErrors.push('At least one number required');
-          isPasswordValid = false;
-        }
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-          passwordErrors.push('At least one special character required');
-          isPasswordValid = false;
-        }
-
-        var passwordsMatch = password === confirmPassword && password !== '';
-
-        if (!isPasswordValid) {
-          $('#passwordValidation').text(passwordErrors.join(', ')).addClass('validation-error').removeClass('validation-success');
-        } else {
-          $('#passwordValidation').text('Password is strong').addClass('validation-success').removeClass('validation-error');
-        }
-
-        if (confirmPassword === '') {
-          $('#confirmPasswordValidation').text('').removeClass('validation-error validation-success');
-        } else if (!passwordsMatch) {
-          $('#confirmPasswordValidation').text('Passwords do not match').addClass('validation-error').removeClass('validation-success');
-        } else {
-          $('#confirmPasswordValidation').text('Passwords match').addClass('validation-success').removeClass('validation-error');
-        }
-
-        $.ajax({
-          url: '{{ url_for("validate_password") }}',
-          method: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({ password: password, confirmPassword: confirmPassword }),
-          beforeSend: function() {
-            console.log('Register AJAX sending:', {
-              password: '[HIDDEN]',
-              confirmPassword: '[HIDDEN]'
-            });
-          },
-          success: function(response) {
-            console.log('Register server validation response:', response);
-            if (!response.isPasswordValid) {
-              $('#passwordValidation').text(response.passwordErrors.join(', ')).addClass('validation-error').removeClass('validation-success');
-              isPasswordValid = false;
-            }
-            if (!response.passwordsMatch) {
-              $('#confirmPasswordValidation').text('Passwords do not match').addClass('validation-error').removeClass('validation-success');
-              passwordsMatch = false;
-            }
-            $('#submitBtn').prop('disabled', !(isPasswordValid && passwordsMatch));
-            console.log('Register validation result:', {
-              isPasswordValid: isPasswordValid,
-              passwordsMatch: passwordsMatch,
-              submitDisabled: $('#submitBtn').prop('disabled')
-            });
-          },
-          error: function(xhr, status, error) {
-            console.error('Register AJAX error:', status, error);
-            $('#passwordValidation').text('Error validating password').addClass('validation-error');
-            $('#submitBtn').prop('disabled', true);
-            alert('Failed to validate password. Please try again.');
+            console.log('Added carousel image:', imageUrl);
           }
         });
+      } else {
+        $('#productImages').append(`
+          <div class="carousel-item active">
+            <img src="/static/uploads/placeholder.jpg" class="d-block w-100 product-carousel-img" alt="No image available">
+          </div>
+        `);
+        console.log('No images available, using placeholder');
       }
 
-      $('#registrationForm #registerPassword, #registrationForm #confirmPassword').on('input blur change keyup paste', function(e) {
-        console.log('Register input event:', {
-          field: $(this).attr('id'),
-          eventType: e.type,
-          value: '[HIDDEN]'
-        });
-        validateRegisterPasswords();
+      var baseUrl = '{{ url_for("add_to_cart", product_id=0) }}'.replace('/0', `/${productId}`);
+      $('#productAddToCartForm').attr('action', baseUrl);
+      $('#modalQuantity').attr('max', quantity).val(1);
+
+      console.log('Modal populated:', {
+        action: baseUrl,
+        maxQuantity: quantity
       });
 
-      $('#togglePassword').on('click', function() {
-        var type = $('#registrationForm #registerPassword').attr('type') === 'password' ? 'text' : 'password';
-        $('#registrationForm #registerPassword').attr('type', type);
-        $(this).toggleClass('fa-eye fa-eye-slash');
-        console.log('Register password visibility toggled:', { type: type });
-        validateRegisterPasswords();
-      });
+      $('#productDetailsModal').modal('show');
+    } catch (error) {
+      console.error('Error populating modal:', error);
+      alert('Error loading product details. Please try again.');
+    }
+  });
 
-      $('#toggleConfirmPassword').on('click', function() {
-        var type = $('#registrationForm #confirmPassword').attr('type') === 'password' ? 'text' : 'password';
-        $('#registrationForm #confirmPassword').attr('type', type);
-        $(this).toggleClass('fa-eye fa-eye-slash');
-        console.log('Register confirm password visibility toggled:', { type: type });
-        validateRegisterPasswords();
-      });
+  // Plus/Minus buttons for quantity input
+  $('.btn-plus').on('click', function() {
+    var productId = $(this).data('product-id');
+    var input = productId === 'modal' ? $('#modalQuantity') : $('#quantity_' + productId);
+    var newValue = parseInt(input.val()) + 1;
+    if (newValue <= parseInt(input.attr('max'))) {
+      input.val(newValue);
+      console.log('Plus button clicked for product ' + productId + ', new value: ' + newValue);
+    } else {
+      alert('Cannot exceed available quantity.');
+    }
+  });
 
-      $('#registrationForm').on('submit', function(e) {
-        var password = $('#registrationForm #registerPassword').val().trim();
-        var confirmPassword = $('#registrationForm #confirmPassword').val().trim();
-        console.log('Register form submission:', {
-          password: '[HIDDEN]',
-          confirmPassword: '[HIDDEN]'
-        });
+  $('.btn-minus').on('click', function() {
+    var productId = $(this).data('product-id');
+    var input = productId === 'modal' ? $('#modalQuantity') : $('#quantity_' + productId);
+    var newValue = parseInt(input.val()) - 1;
+    if (newValue >= 1) {
+      input.val(newValue);
+      console.log('Minus button clicked for product ' + productId + ', new value: ' + newValue);
+    }
+  });
 
-        if (password === '') {
-          e.preventDefault();
-          alert('Please enter a password.');
-          return;
-        }
-        if (password !== confirmPassword) {
-          e.preventDefault();
-          alert('Passwords do not match.');
-        }
-      });
+  // Debug add to cart form submission
+  $('.add-to-cart-form').on('submit', function(e) {
+    var quantity = $(this).find('input[name="quantity"]').val();
+    console.log('Add to cart submitted for ' + $(this).attr('action') + ', quantity: ' + quantity);
+  });
 
-      // Login: Client-side validation
-      function validateLoginForm() {
-        var email = $('#loginForm #loginEmail').val().trim();
-        var password = $('#loginForm #loginPassword').val().trim();
+  // Debug modal triggers
+  $('[data-toggle="modal"]').on('click', function(e) {
+    e.preventDefault();
+    var target = $(this).data('target');
+    console.log('Modal trigger clicked: ' + target);
+    $(target).modal('show');
+  });
 
-        console.log('Login client-side validation:', {
-          email: email,
-          emailLength: email.length,
-          password: '[HIDDEN]',
-          passwordLength: password.length
-        });
-
-        var isEmailValid = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-        var isPasswordValid = password.length > 0;
-
-        if (email === '') {
-          $('#emailValidation').text('Please enter an email').addClass('validation-error').removeClass('validation-success');
-        } else if (!isEmailValid) {
-          $('#emailValidation').text('Please enter a valid email').addClass('validation-error').removeClass('validation-success');
-        } else {
-          $('#emailValidation').text('Email is valid').addClass('validation-success').removeClass('validation-error');
-        }
-
-        if (password === '') {
-          $('#passwordValidation').text('Please enter a password').addClass('validation-error').removeClass('validation-success');
-        } else {
-          $('#passwordValidation').text('').removeClass('validation-error validation-success');
-        }
-
-        $('#loginSubmitBtn').prop('disabled', !(isEmailValid && isPasswordValid));
-        console.log('Login validation result:', {
-          isEmailValid: isEmailValid,
-          isPasswordValid: isPasswordValid,
-          submitDisabled: $('#loginSubmitBtn').prop('disabled')
-        });
-      }
-
-      $('#loginForm #loginEmail, #loginForm #loginPassword').on('input blur change keyup paste', function(e) {
-        console.log('Login input event:', {
-          field: $(this).attr('id'),
-          eventType: e.type,
-          value: $(this).attr('id') === 'loginEmail' ? $(this).val() : '[HIDDEN]'
-        });
-        validateLoginForm();
-      });
-
-      $('#toggleLoginPassword').on('click', function() {
-        var type = $('#loginForm #loginPassword').attr('type') === 'password' ? 'text' : 'password';
-        $('#loginForm #loginPassword').attr('type', type);
-        $(this).toggleClass('fa-eye fa-eye-slash');
-        console.log('Login password visibility toggled:', { type: type });
-        validateLoginForm();
-      });
-
-      $('#loginForm').on('submit', function(e) {
-        var email = $('#loginForm #loginEmail').val().trim();
-        var password = $('#loginForm #loginPassword').val().trim();
-        console.log('Login form submission:', {
-          email: email,
-          password: '[HIDDEN]'
-        });
-
-        if (email === '' || password === '') {
-          e.preventDefault();
-          alert('Please fill in all fields.');
-          console.warn('Login submission blocked: Empty fields');
-          return;
-        }
-
-        console.log('Login form submitting to:', $(this).attr('action'));
-      });
-
-      // Admin Login: Client-side validation
-      function validateAdminLoginForm() {
-        var username = $('#adminLoginForm #admin_username').val().trim();
-        var password = $('#adminLoginForm #admin_password').val().trim();
-
-        console.log('Admin login client-side validation:', {
-          username: username,
-          usernameLength: username.length,
-          password: '[HIDDEN]',
-          passwordLength: password.length
-        });
-
-        var isUsernameValid = username.length > 0;
-        var isPasswordValid = password.length > 0;
-
-        $('#adminLoginForm button[type="submit"]').prop('disabled', !(isUsernameValid && isPasswordValid));
-        console.log('Admin login validation result:', {
-          isUsernameValid: isUsernameValid,
-          isPasswordValid: isPasswordValid,
-          submitDisabled: $('#adminLoginForm button[type="submit"]').prop('disabled')
-        });
-      }
-
-      $('#adminLoginForm #admin_username, #adminLoginForm #admin_password').on('input blur change keyup paste', function(e) {
-        console.log('Admin login input event:', {
-          field: $(this).attr('id'),
-          eventType: e.type,
-          value: $(this).attr('id') === 'admin_username' ? $(this).val() : '[HIDDEN]'
-        });
-        validateAdminLoginForm();
-      });
-
-      $('#adminLoginForm').on('submit', function(e) {
-        var username = $('#adminLoginForm #admin_username').val().trim();
-        var password = $('#adminLoginForm #admin_password').val().trim();
-        console.log('Admin login form submission:', {
-          username: username,
-          password: '[HIDDEN]'
-        });
-
-        if (username === '' || password === '') {
-          e.preventDefault();
-          alert('Please fill in all fields.');
-          console.warn('Admin login submission blocked: Empty fields');
-        }
-      });
-
-      // Debug modal open
-      $('#loginModal').on('show.bs.modal', function() {
-        var loginInputs = $('input[id="loginEmail"], input[id="loginPassword"]');
-        var allInputs = $('input');
-        console.log('Login modal opened, input state:', {
-          emailValue: $('#loginForm #loginEmail').val(),
-          passwordValue: '[HIDDEN]',
-          emailExists: !!$('#loginForm #loginEmail').length,
-          passwordExists: !!$('#loginForm #loginPassword').length,
-          multipleLoginInputs: loginInputs.length > 2 ? loginInputs.map(function() { return this.outerHTML; }).get() : 'Single inputs',
-          totalInputs: allInputs.length + ' inputs found',
-          allInputIds: allInputs.map(function() { return $(this).attr('id') || 'no-id'; }).get()
-        });
-        validateLoginForm();
-      });
-
-      $('#registerModal').on('show.bs.modal', function() {
-        var passwordInputs = $('input[id="registerPassword"]');
-        var allInputs = $('input');
-        console.log('Register modal opened, input state:', {
-          passwordValue: '[HIDDEN]',
-          exists: !!$('#registrationForm #registerPassword').length,
-          id: $('#registrationForm #registerPassword').attr('id'),
-          multiplePasswordInputs: passwordInputs.length > 1 ? passwordInputs.map(function() { return this.outerHTML; }).get() : 'Single input',
-          totalInputs: allInputs.length + ' inputs found',
-          allInputIds: allInputs.map(function() { return $(this).attr('id') || 'no-id'; }).get()
-        });
-      });
-
-      $('#adminLoginModal').on('show.bs.modal', function() {
-        var adminInputs = $('input[id="admin_username"], input[id="admin_password"]');
-        var allInputs = $('input');
-        console.log('Admin login modal opened, input state:', {
-          usernameValue: $('#adminLoginForm #admin_username').val(),
-          passwordValue: '[HIDDEN]',
-          usernameExists: !!$('#adminLoginForm #admin_username').length,
-          passwordExists: !!$('#adminLoginForm #admin_password').length,
-          multipleAdminInputs: adminInputs.length > 2 ? adminInputs.map(function() { return this.outerHTML; }).get() : 'Single inputs',
-          totalInputs: allInputs.length + ' inputs found',
-          allInputIds: allInputs.map(function() { return $(this).attr('id') || 'no-id'; }).get()
-        });
-        validateAdminLoginForm();
-      });
-
-      // Prevent modal from clearing inputs
-      $('#loginModal, #registerModal, #adminLoginModal, #checkoutModal, #productDetailsModal').on('hidden.bs.modal', function() {
-        var formId = $(this).attr('id') === 'loginModal' ? '#loginForm' :
-                     $(this).attr('id') === 'registerModal' ? '#registrationForm' :
-                     $(this).attr('id') === 'adminLoginModal' ? '#adminLoginForm' :
-                     $(this).attr('id') === 'checkoutModal' ? '#checkoutForm' : '#productAddToCartForm';
-        $(formId)[0].reset = function() {
-          console.log('Form reset prevented for ' + formId);
-        };
-      });
-
-      // Debug checkout form submission
-      $('#checkoutForm').on('submit', function() {
-        const transactionCode = $('#transaction-code').val();
-        console.log('Checkout form submitted:', { transactionCode });
-      });
-
-      // Debug cancel order submission
-      $('.btn-delete').on('click', function() {
-        const form = $(this).closest('form');
-        console.log('Cancel order or remove item clicked:', { action: form.attr('action') });
+  // Debug modal events
+  $('.modal').on('show.bs.modal', function() {
+    console.log('Modal opened: #' + $(this).attr('id'));
+  }).on('hide.bs.modal', function() {
+    console.log('Modal closed: #' + $(this).attr('id'));
+    $('#loginForm input, #registrationForm input, #adminLoginForm input, #checkoutForm input, #productAddToCartForm input').each(function() {
+      console.log('Input state on modal hide:', {
+        id: $(this).attr('id'),
+        value: $(this).attr('type') === 'password' ? '[HIDDEN]' : $(this).val()
       });
     });
-  </script>
+  });
+
+  // Category selection for registration
+  $('#continueBtn').on('click', function() {
+    var selectedCategory = $('input[name="category"]:checked').val();
+    if (selectedCategory) {
+      $('#registrationForm').show();
+      $('#categorySelection').hide();
+      $('#companyNameLabel').text(selectedCategory === 'household' ? 'Surname' : 'Company Name');
+      console.log('Category selected: ' + selectedCategory);
+      // Trigger initial validation to show feedback on form display
+      validateRegistrationForm();
+    } else {
+      alert('Please select a category.');
+    }
+  });
+
+  // Real-time Registration Validation
+  function validateRegistrationForm() {
+    var companyName = $('#companyName').val().trim();
+    var contactPerson = $('#contactPerson').val().trim();
+    var email = $('#email').val().trim();
+    var phone = $('#phone').val().trim();
+    var address = $('#address').val().trim();
+    var password = $('#registerPassword').val().trim();
+    var confirmPassword = $('#confirmPassword').val().trim();
+
+    var isValid = true;
+
+    // Company Name/Surname Validation
+    if (companyName === '') {
+      $('#companyNameValidation').text('Please enter a name').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(companyName)) {
+      $('#companyNameValidation').text('Only letters and spaces allowed').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else {
+      $('#companyNameValidation').text('Valid name').addClass('validation-success').removeClass('validation-error');
+    }
+
+    // Contact Person Validation
+    if (contactPerson === '') {
+      $('#contactPersonValidation').text('Please enter a contact person name').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(contactPerson)) {
+      $('#contactPersonValidation').text('Only letters and spaces allowed').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else {
+      $('#contactPersonValidation').text('Valid contact person name').addClass('validation-success').removeClass('validation-error');
+    }
+
+    // Email Validation
+    var emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (email === '') {
+      $('#emailValidation').text('Please enter an email').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!email.includes('@')) {
+      $('#emailValidation').text('Email must include @ symbol').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      $('#emailValidation').text('Please enter a valid email (e.g., user@domain.com)').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else {
+      $('#emailValidation').text('Valid email').addClass('validation-success').removeClass('validation-error');
+    }
+
+    // Phone Number Validation
+    var phoneRegex = /^\d{10,15}$/;
+    if (phone === '') {
+      $('#phoneValidation').text('Please enter a phone number').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!/^\d+$/.test(phone)) {
+      $('#phoneValidation').text('Only numbers allowed').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!phoneRegex.test(phone)) {
+      $('#phoneValidation').text('Must be 10–15 digits').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else {
+      $('#phoneValidation').text('Valid phone number').addClass('validation-success').removeClass('validation-error');
+    }
+
+    // Address Validation
+    if (address === '') {
+      $('#addressValidation').text('Please enter an address').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else {
+      $('#addressValidation').text('Valid address').addClass('validation-success').removeClass('validation-error');
+    }
+
+    // Password Validation
+    var isPasswordValid = true;
+    if (password === '') {
+      $('#lengthCheck, #uppercaseCheck, #lowercaseCheck, #numberCheck, #specialCharCheck').addClass('invalid').removeClass('valid');
+      $('#passwordValidation').text('Please enter a password').addClass('validation-error').removeClass('validation-success');
+      isPasswordValid = false;
+      isValid = false;
+    } else {
+      // Length Check
+      if (password.length < 8) {
+        $('#lengthCheck').addClass('invalid').removeClass('valid');
+        isPasswordValid = false;
+      } else {
+        $('#lengthCheck').addClass('valid').removeClass('invalid');
+      }
+
+      // Uppercase Check
+      if (!/[A-Z]/.test(password)) {
+        $('#uppercaseCheck').addClass('invalid').removeClass('valid');
+        isPasswordValid = false;
+      } else {
+        $('#uppercaseCheck').addClass('valid').removeClass('invalid');
+      }
+
+      // Lowercase Check
+      if (!/[a-z]/.test(password)) {
+        $('#lowercaseCheck').addClass('invalid').removeClass('valid');
+        isPasswordValid = false;
+      } else {
+        $('#lowercaseCheck').addClass('valid').removeClass('invalid');
+      }
+
+      // Number Check
+      if (!/\d/.test(password)) {
+        $('#numberCheck').addClass('invalid').removeClass('valid');
+        isPasswordValid = false;
+      } else {
+        $('#numberCheck').addClass('valid').removeClass('invalid');
+      }
+
+      // Special Character Check
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+        $('#specialCharCheck').addClass('invalid').removeClass('valid');
+        isPasswordValid = false;
+      } else {
+        $('#specialCharCheck').addClass('valid').removeClass('invalid');
+      }
+
+      if (isPasswordValid) {
+        $('#passwordValidation').text('Password is strong').addClass('validation-success').removeClass('validation-error');
+      } else {
+        $('#passwordValidation').text('Password does not meet requirements').addClass('validation-error').removeClass('validation-success');
+        isValid = false;
+      }
+    }
+
+    // Confirm Password Validation
+    var passwordsMatch = password === confirmPassword && password !== '';
+    if (confirmPassword === '') {
+      $('#confirmPasswordValidation').text('Please confirm your password').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else if (!passwordsMatch) {
+      $('#confirmPasswordValidation').text('Passwords do not match').addClass('validation-error').removeClass('validation-success');
+      isValid = false;
+    } else {
+      $('#confirmPasswordValidation').text('Passwords match').addClass('validation-success').removeClass('validation-error');
+    }
+
+    // Enable submit button only if all fields are valid
+    $('#submitBtn').prop('disabled', !isValid);
+
+    // Optional AJAX for server-side password validation
+    if (password !== '' && confirmPassword !== '') {
+      $.ajax({
+        url: '{{ url_for("validate_password") }}',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ password: password, confirmPassword: confirmPassword }),
+        success: function(response) {
+          console.log('Server validation response:', response);
+          if (!response.isPasswordValid) {
+            $('#passwordValidation').text(response.passwordErrors.join(', ')).addClass('validation-error').removeClass('validation-success');
+            isPasswordValid = false;
+            isValid = false;
+          }
+          if (!response.passwordsMatch) {
+            $('#confirmPasswordValidation').text('Passwords do not match').addClass('validation-error').removeClass('validation-success');
+            isValid = false;
+          }
+          $('#submitBtn').prop('disabled', !isValid);
+        },
+        error: function(xhr, status, error) {
+          console.error('Password AJAX error:', status, error);
+          // Allow client-side validation to proceed even if server fails
+        }
+      });
+    }
+
+    return isValid;
+  }
+
+  // Dedicated email input event handler for immediate feedback
+  $('#email').on('input keyup change paste', function(e) {
+    console.log('Email input event:', {
+      field: $(this).attr('id'),
+      eventType: e.type,
+      value: $(this).val()
+    });
+    validateRegistrationForm();
+  });
+
+  // Bind real-time validation to other registration form inputs
+  $('#registrationForm input:not(#email), #registrationForm textarea').on('input keyup change paste', function(e) {
+    console.log('Registration input event:', {
+      field: $(this).attr('id'),
+      eventType: e.type,
+      value: $(this).attr('type') === 'password' ? '[HIDDEN]' : $(this).val()
+    });
+    validateRegistrationForm();
+  });
+
+  // Password visibility toggle
+  $('#togglePassword').on('click', function() {
+    var type = $('#registerPassword').attr('type') === 'password' ? 'text' : 'password';
+    $('#registerPassword').attr('type', type);
+    $(this).toggleClass('fa-eye fa-eye-slash');
+    console.log('Password visibility toggled:', { type: type });
+    validateRegistrationForm();
+  });
+
+  $('#toggleConfirmPassword').on('click', function() {
+    var type = $('#confirmPassword').attr('type') === 'password' ? 'text' : 'password';
+    $('#confirmPassword').attr('type', type);
+    $(this).toggleClass('fa-eye fa-eye-slash');
+    console.log('Confirm password visibility toggled:', { type: type });
+    validateRegistrationForm();
+  });
+
+  $('#toggleLoginPassword').on('click', function() {
+    var type = $('#loginPassword').attr('type') === 'password' ? 'text' : 'password';
+    $('#loginPassword').attr('type', type);
+    $(this).toggleClass('fa-eye fa-eye-slash');
+    console.log('Login password visibility toggled:', { type: type });
+    validateLoginForm();
+  });
+
+  // Form submission
+  $('#registrationForm').on('submit', function(e) {
+    if (!validateRegistrationForm()) {
+      e.preventDefault();
+      alert('Please correct the errors in the form.');
+      console.warn('Form submission blocked: Validation failed');
+    } else {
+      console.log('Form submission allowed');
+    }
+  });
+
+  // Login Validation
+  function validateLoginForm() {
+    var email = $('#loginEmail').val().trim();
+    var password = $('#loginPassword').val().trim();
+    var isEmailValid = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    var isPasswordValid = password.length > 0;
+
+    if (email === '') {
+      $('#emailValidation').text('Please enter an email').addClass('validation-error').removeClass('validation-success');
+    } else if (!isEmailValid) {
+      $('#emailValidation').text('Please enter a valid email').addClass('validation-error').removeClass('validation-success');
+    } else {
+      $('#emailValidation').text('Email is valid').addClass('validation-success').removeClass('validation-error');
+    }
+
+    if (password === '') {
+      $('#passwordValidation').text('Please enter a password').addClass('validation-error').removeClass('validation-success');
+    } else {
+      $('#passwordValidation').text('').removeClass('validation-error validation-success');
+    }
+
+    $('#loginSubmitBtn').prop('disabled', !(isEmailValid && isPasswordValid));
+    console.log('Login validation result:', {
+      isEmailValid: isEmailValid,
+      isPasswordValid: isPasswordValid,
+      submitDisabled: $('#loginSubmitBtn').prop('disabled')
+    });
+  }
+
+  $('#loginEmail, #loginPassword').on('input blur change keyup paste', function(e) {
+    console.log('Login input event:', {
+      field: $(this).attr('id'),
+      eventType: e.type,
+      value: $(this).attr('id') === 'loginEmail' ? $(this).val() : '[HIDDEN]'
+    });
+    validateLoginForm();
+  });
+
+  $('#loginForm').on('submit', function(e) {
+    var email = $('#loginEmail').val().trim();
+    var password = $('#loginPassword').val().trim();
+    console.log('Login form submission:', {
+      email: email,
+      password: '[HIDDEN]'
+    });
+
+    if (email === '' || password === '') {
+      e.preventDefault();
+      alert('Please fill in all fields.');
+      console.warn('Login submission blocked: Empty fields');
+    }
+  });
+
+  // Admin Login Validation
+  function validateAdminLoginForm() {
+    var username = $('#admin_username').val().trim();
+    var password = $('#admin_password').val().trim();
+    var isUsernameValid = username.length > 0;
+    var isPasswordValid = password.length > 0;
+
+    $('#adminLoginForm button[type="submit"]').prop('disabled', !(isUsernameValid && isPasswordValid));
+    console.log('Admin login validation result:', {
+      isUsernameValid: isUsernameValid,
+      isPasswordValid: isPasswordValid,
+      submitDisabled: $('#adminLoginForm button[type="submit"]').prop('disabled')
+    });
+  }
+
+  $('#admin_username, #admin_password').on('input blur change keyup paste', function(e) {
+    console.log('Admin login input event:', {
+      field: $(this).attr('id'),
+      eventType: e.type,
+      value: $(this).attr('id') === 'admin_username' ? $(this).val() : '[HIDDEN]'
+    });
+    validateAdminLoginForm();
+  });
+
+  $('#adminLoginForm').on('submit', function(e) {
+    var username = $('#admin_username').val().trim();
+    var password = $('#admin_password').val().trim();
+    console.log('Admin login form submission:', {
+      username: username,
+      password: '[HIDDEN]'
+    });
+
+    if (username === '' || password === '') {
+      e.preventDefault();
+      alert('Please fill in all fields.');
+      console.warn('Admin login submission blocked: Empty fields');
+    }
+  });
+
+  // Debug modal open
+  $('#loginModal').on('show.bs.modal', function() {
+    validateLoginForm();
+  });
+
+  $('#registerModal').on('show.bs.modal', function() {
+    validateRegistrationForm();
+  });
+
+  $('#adminLoginModal').on('show.bs.modal', function() {
+    validateAdminLoginForm();
+  });
+
+  // Prevent modal from clearing inputs
+  $('#loginModal, #registerModal, #adminLoginModal, #checkoutModal, #productDetailsModal').on('hidden.bs.modal', function() {
+    var formId = $(this).attr('id') === 'loginModal' ? '#loginForm' :
+                 $(this).attr('id') === 'registerModal' ? '#registrationForm' :
+                 $(this).attr('id') === 'adminLoginModal' ? '#adminLoginForm' :
+                 $(this).attr('id') === 'checkoutModal' ? '#checkoutForm' : '#productAddToCartForm';
+    $(formId)[0].reset = function() {
+      console.log('Form reset prevented for ' + formId);
+    };
+  });
+
+  // Debug checkout form submission
+  $('#checkoutForm').on('submit', function() {
+    const transactionCode = $('#transaction-code').val();
+    console.log('Checkout form submitted:', { transactionCode });
+  });
+
+  // Debug cancel order submission
+  $('.btn-delete').on('click', function() {
+    const form = $(this).closest('form');
+    console.log('Cancel order or remove item clicked:', { action: form.attr('action') });
+  });
+});
+</script>
 </body>
 </html>

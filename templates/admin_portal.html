@@ -9,6 +9,30 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <style>
+    .sidebar {
+      height: 100vh; /* Full viewport height */
+      overflow-y: auto; /* Enable vertical scrollbar when content overflows */
+      position: fixed; /* Keep sidebar fixed */
+      width: 250px; /* Adjust width as needed */
+      background-color: #343a40; /* Dark background for sidebar (Bootstrap dark theme) */
+      padding-top: 20px;
+    }
+    .sidebar a, .sidebar .btn-link {
+      color: #ccc;
+      display: block;
+      padding: 15px;
+      text-decoration: none;
+    }
+    .sidebar a:hover, .sidebar .btn-link:hover {
+      background-color: #495057;
+      color: #fff;
+    }
+    .main-content {
+      margin-left: 270px; /* Offset for sidebar width + padding */
+      padding: 20px;
+    }
+  </style>
 </head>
 <body>
   <div class="container-fluid">
@@ -19,7 +43,10 @@
       <a href="#" data-toggle="modal" data-target="#manageCategoriesModal">Manage Categories</a>
       <a href="#" data-toggle="modal" data-target="#ordersModal">Manage Orders</a>
       <a href="#" data-toggle="modal" data-target="#manageUsersModal">Manage Users</a>
-      <a href="#" data-toggle="modal" data-target="#reportsModal">Reports</a>
+      <a href="{{ url_for('reorder_level_report') }}">Re-order Level Report</a>
+      <a href="{{ url_for('stock_calendar_report') }}">Stock Calendar Report</a>
+      <a href="{{ url_for('product_movement_report') }}">Product Movement Report</a>
+      <a href="{{ url_for('order_status_report') }}">Order Status Report</a>
       <form action="{{ url_for('admin_logout') }}" method="post">
         <button type="submit" class="btn btn-link" style="color: #ccc; width: 100%; text-align: left; padding: 15px;">Logout</button>
       </form>
@@ -288,118 +315,91 @@
                   <td>{{ order.product.name }}</td>
                   <td>{{ order.quantity }}</td>
                   <td>{{ order.total_price }}</td>
-                  <td>{{ order.user_id }}</td>
-                  <td>{{ order.ordered_at }}</td>
-                  <td>{{ order.user.address or 'Not specified' }}</td>
-                  <td>{{ order.status | capitalize }}</td>
-                  <td>
-                    <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
-                      <select name="status" class="form-control d-inline-block w-auto">
-                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
-                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
-                        <option value="canceled" {% if order.status == 'canceled' %}selected{% endif %}>Canceled</order>
-                      </select>
-                      <button type="submit" class="btn btn-success btn-sm">Update</button>
-                    </form>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  < unas>
+                    <td>{{ order.user_id }}</td>
+                    <td>{{ order.ordered_at }}</td>
+                    <td>{{ order.user.address or 'Not specified' }}</td>
+                    <td>{{ order.status | capitalize }}</td>
+                    <td>
+                      <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="post">
+                        <select name="status" class="form-control d-inline-block w-auto">
+                          <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                          <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                          <option value="canceled" {% if order.status == 'canceled' %}selected{% endif %}>Canceled</option>
+                        </select>
+                        <button type="submit" class="btn btn-success btn-sm">Update</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="modal fade" id="manageUsersModal" tabindex="-1" aria-labelledby="manageUsersModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="manageUsersModalLabel">Manage Users</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <table class="table table-dark">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>User Name</th>
-                <th>Contact Person</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Address</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for user in users %}
+    <div class="modal fade" id="manageUsersModal" tabindex="-1" aria-labelledby="manageUsersModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="manageUsersModalLabel">Manage Users</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <table class="table table-dark">
+              <thead>
                 <tr>
-                  <td>{{ user.id }}</td>
-                  <td>{{ user.company_name }}</td>
-                  <td>{{ user.contact_person }}</td>
-                  <td>{{ user.email }}</td>
-                  <td>{{ user.phone }}</td>
-                  <td>{{ user.address }}</td>
-                  <td>
-                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="post">
-                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                  </td>
+                  <th>ID</th>
+                  <th>User Name</th>
+                  <th>Contact Person</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Address</th>
+                  <th>Action</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                  <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.company_name }}</td>
+                    <td>{{ user.contact_person }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>{{ user.address }}</td>
+                    <td>
+                      <form action="{{ url_for('delete_user', user_id=user.id) }}" method="post">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="modal fade" id="reportsModal" tabindex="-1" aria-labelledby="reportsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="reportsModalLabel">Reports</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <ul class="list-unstyled">
-            <li class="mb-2">
-              <a href="{{ url_for('reorder_level_report') }}" class="btn btn-success btn-block">Re-order Level Report</a>
-            </li>
-            <li class="mb-2">
-              <a href="{{ url_for('stock_calendar_report') }}" class="btn btn-success btn-block">Stock Calendar Report</a>
-            </li>
-            <li class="mb-2">
-              <a href="{{ url_for('product_movement_report') }}" class="btn btn-success btn-block">Product Movement Report</a>
-            </li>
-            <li class="mb-2">
-              <a href="{{ url_for('order_status_report') }}" class="btn btn-success btn-block">Order Status Report</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <script>
-    $(document).ready(function() {
-      $('form[action*="update-order-status"]').on('submit', function() {
-        const status = $(this).find('select[name="status"]').val();
-        console.log('Order status form submitted:', {
-          order_id: $(this).attr('action').match(/\/(\d+)$/)[1],
-          status: status
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      $(document).ready(function() {
+        $('form[action*="update-order-status"]').on('submit', function() {
+          const status = $(this).find('select[name="status"]').val();
+          console.log('Order status form submitted:', {
+            order_id: $(this).attr('action').match(/\/(\d+)$/)[1],
+            status: status
+          });
+        });
+        $('form[action*="delete-product"]').on('submit', function() {
+          console.log('Product deletion form submitted:', {
+            product_id: $(this).attr('action').match(/\/(\d+)$/)[1]
+          });
         });
       });
-      $('form[action*="delete-product"]').on('submit', function() {
-        console.log('Product deletion form submitted:', {
-          product_id: $(this).attr('action').match(/\/(\d+)$/)[1]
-        });
-      });
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>

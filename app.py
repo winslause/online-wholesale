@@ -11,13 +11,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import requests
+from sqlalchemy import event
+from sqlalchemy.sql import text
+from sqlite3 import Connection as SQLiteConnection
 
 # Load environment variables
 load_dotenv()
 
 # Flask app configuration
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///your_database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_secret_key')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -35,6 +38,21 @@ mail = Mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'home'
+
+# Ensure foreign key support in SQLite
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, SQLiteConnection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
+
+# Register the event listener within an application context
+with app.app_context():
+    event.listens_for(db.engine, "connect")(set_sqlite_pragma)
+
+
+
+
 
 # Daraja API Configuration
 DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY', 'olEgzSljAdQUG68AnstwxZ5vruvhPfVd4AjpkWHPTWBokGKJ')
@@ -75,10 +93,11 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     images = db.Column(db.String(255))
     reorder_level = db.Column(db.Integer, nullable=False, default=10)
-    carts = db.relationship('UserCart', backref='product', lazy=True)
-    orders = db.relationship('Order', backref='product', lazy=True)
-    user_orders = db.relationship('UserOrder', backref='product', lazy=True)
-    admin_orders = db.relationship('AdminOrder', backref='product', lazy=True)
+    carts = db.relationship('UserCart', backref='product', lazy=True, cascade='all, delete-orphan')
+    orders = db.relationship('Order', backref='product', lazy=True, cascade='all, delete-orphan')
+    user_orders = db.relationship('UserOrder', backref='product', lazy=True, cascade='all, delete-orphan')
+    admin_orders = db.relationship('AdminOrder', backref='product', lazy=True, cascade='all, delete-orphan')
+    stock_transactions = db.relationship('StockTransaction', backref='product', lazy=True, cascade='all, delete-orphan')
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -125,22 +144,26 @@ class AdminOrder(db.Model):
 
 class StockTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False)  # Positive for additions, negative for orders
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id', ondelete='CASCADE'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
     transaction_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    type = db.Column(db.String(20), nullable=False)  # 'addition' or 'order'
-    product = db.relationship('Product', backref='stock_transactions')
+    type = db.Column(db.String(20), nullable=False)
 
+    
 # Initialize database
 def initialize_database():
     with app.app_context():
         db.create_all()
+        # Verify schema creation
+        with db.engine.connect() as connection:
+            schema = connection.execute(text("SELECT sql FROM sqlite_master WHERE type='table' AND name='stock_transaction';")).fetchone()
+            print(f"StockTransaction schema: {schema[0] if schema else 'Not created'}")
+        
         if not Category.query.first():
             default_categories = ['Electronics', 'Clothing', 'Food']
             for name in default_categories:
                 db.session.add(Category(name=name))
             db.session.commit()
-        # Initialize StockTransaction with current Product.quantity
         if not StockTransaction.query.first():
             products = Product.query.all()
             for product in products:
@@ -148,12 +171,14 @@ def initialize_database():
                     transaction = StockTransaction(
                         product_id=product.id,
                         quantity=product.quantity,
-                        transaction_date=datetime.utcnow(),  # Today, May 19, 2025
+                        transaction_date=datetime.utcnow(),
                         type='addition'
                     )
                     db.session.add(transaction)
             db.session.commit()
         print("Database tables created.")
+
+
 
 initialize_database()
 
@@ -323,6 +348,17 @@ def check_and_notify_low_stock():
             return low_stock_products, False
     return [], False
 
+
+
+# Ensure foreign key support in SQLite
+# @event.listens_for(db.engine, "connect")
+# def set_sqlite_pragma(dbapi_connection, connection_record):
+#     if isinstance(dbapi_connection, SQLiteConnection):
+#         cursor = dbapi_connection.cursor()
+#         cursor.execute("PRAGMA foreign_keys=ON;")
+#         cursor.close()
+        
+        
 # Flask-Login user loader
 @login_manager.user_loader
 def load_user(user_id):
@@ -629,9 +665,10 @@ def delete_product(product_id):
         return redirect(url_for('home'))
     product = Product.query.get_or_404(product_id)
     try:
-        if product.user_orders or product.carts:
+        if product.user_orders or product.carts or product.orders:
             flash('Cannot delete product with associated orders or cart items.', 'danger')
             return redirect(url_for('admin_portal'))
+        # The cascade delete on stock_transaction.product_id will automatically remove related StockTransaction records
         db.session.delete(product)
         db.session.commit()
         flash('Product deleted successfully.', 'success')
